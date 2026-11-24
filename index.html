@@ -204,7 +204,7 @@ function render(){
   <div class="h1" style="margin-top:24px">AI 투자 브리핑 연구에<br>참여해 주셔서 고마워요</div>
   <div class="lead">해당하는 쪽을 골라 주세요. 고른 데 따라 보는 내용과 걸리는 시간이 달라요.</div>
   <div class="panel pad" style="margin-top:12px"><div class="q" style="margin-bottom:12px">어떤 분이세요?</div>
-   <div class="two">${opt('g','E','금융회사에서 일해요','투자·리서치·심사·상품기획, 지금 또는 1년 이상')}${opt('g','G','주식을 직접 투자해요','금융회사 경험은 없어요')}</div></div>`+
+   <div class="two">${opt('g','E','금융회사에서 일해요','투자·리서치·심사·상품기획, 지금 또는 1년 이상')}${opt('g','G','개인 투자자예요','주식·펀드·ETF 등에 직접 투자해요')}</div></div>`+
   (g?`<div class="lead" style="margin-top:12px">${g==='E'?'약 10분 걸려요 · 브리핑 하나를 보고, 검토 요청 하나에 의견을 남겨요':'약 5분 걸려요 · 브리핑 하나를 보고 짧게 답해요'}</div>`:'')+
   (err?`<div class="lead" style="color:#B42318;margin-top:12px">${err}</div>`:'')+
   `<div class="sticky"><button class="cap pri" data-act="start" ${ready&&!busy?'':'disabled'}>${busy?'준비하는 중…':'시작하기'}</button></div>`;
