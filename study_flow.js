@@ -143,12 +143,12 @@ review:()=>{ const A=C.A,items=Object.fromEntries(A.checklist.flatMap(g=>g.items
   <div class="panel" style="margin-top:16px">${(k.items||[]).map(id=>`<div class="oth"><div class="one2">${esc(items[id].t)}</div><div class="meta">확인할 것 · ${esc(items[id].q)}</div><div class="sm2" style="margin-top:4px">${esc(items[id].f)}</div></div>`).join('')}
    ${(k.diag||[]).map(id=>`<div class="oth"><div class="one2">${esc(diag[id].q.replace(/^[①-④] /,''))}</div>${diag[id].rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join('')}</div>`+sticky('검토 요청으로 돌아가기','closesub'); }
  return note()+topbar('검토 요청')+`<div class="card"><div class="k">${esc(A.request.label)}</div><div class="big" style="font-size:24px">${esc(A.request.title)}</div><div class="s">${esc(A.request.sub)}</div></div>
- <div class="stepbar">${['결과 보기','궁금한 것 확인','검토 의견 남기기'].map((x,i)=>`<div><b>${i+1}</b>${x}</div>`).join('')}</div>
- <h2>1. 핵심 결과</h2><div class="panel pad"><div class="h3">${esc(A.card.title)}</div><div class="meta">${esc(A.headline)}</div>${chart(A.card)}
+ <div class="lead" style="margin:16px 0 0">아래 결과를 보고, 궁금한 것이 있으면 확인한 뒤, 맨 아래에서 검토 의견을 남겨 주세요.</div>
+ <h2>핵심 결과</h2><div class="panel pad"><div class="h3">${esc(A.card.title)}</div><div class="meta">${esc(A.headline)}</div>${chart(A.card)}
   <button class="fold" data-act="amore"><span>결과 자세히 보기</span><span>${st.A.more?'⌃':'⌄'}</span></button>
   ${st.A.more?A.card.bars.map(b=>`<div class="kv"><span>${esc(b.label)} · 회차별</span><span>${esc(b.rounds)}</span></div>`).join('')+A.card.rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join(''):''}</div>
- <h2>2. 결정 전에 궁금한 것</h2><div class="lead" style="margin:-4px 0 12px">검토하면서 확인하고 싶은 질문을 눌러 보세요. 연구팀이 확인한 내용이 나와요. 하나도 열지 않아도 괜찮아요.</div><div class="panel">${A.cards.map(k=>`<button class="li" data-act="card" data-id="${k.id}"><div class="tx"><div class="nm">${esc(k.t)}</div><div class="sm2">${esc(k.one)}</div></div>${st.A.cards.includes(k.id)?`<span class="ok">${ic('check')}</span>`:'<span class="chev">›</span>'}</button>`).join('')}</div>`
- +sticky('3. 검토 의견 남기기','next'); },
+ <h2>결정 전에 궁금한 것</h2><div class="lead" style="margin:-4px 0 12px">검토하면서 확인하고 싶은 질문을 눌러 보세요. 연구팀이 확인한 내용이 나와요. 하나도 열지 않아도 괜찮아요.</div><div class="panel">${A.cards.map(k=>`<button class="li" data-act="card" data-id="${k.id}"><div class="tx"><div class="nm">${esc(k.t)}</div><div class="sm2">${esc(k.one)}</div></div>${st.A.cards.includes(k.id)?`<span class="ok">${ic('check')}</span>`:'<span class="chev">›</span>'}</button>`).join('')}</div>`
+ +sticky('검토 의견 남기기','next'); },
 aq:()=>{ const A=C.A,qs=[A.q1,A.q2,A.q3]; return note()+back('검토 요청 다시 보기','')+`<div class="h1">검토 의견</div>${qs.map(q=>qHtml(q,'a')).join('')}
  <h2>하시는 일</h2>${A.background.map(q=>qHtml(Object.assign({},q,{grid:true}),'bg')).join('')}`+sticky('마치기','next',!(allDone(qs,'a')&&allDone(A.background,'bg'))); },
 end:()=>{ const lead=!SUBMIT?'결과 파일을 공유하거나 복사한 글을 붙여 넣어, 링크를 보내 준 연구 담당자에게 카카오톡 1:1로 보내 주세요.'
