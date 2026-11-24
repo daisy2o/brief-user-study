@@ -65,7 +65,7 @@ document.addEventListener('visibilitychange',()=>{ const s=step(); if(s.t!=='bri
   if(document.hidden){ if(shownAt) c.ms+=performance.now()-shownAt; hidAt=performance.now(); } else { if(hidAt) c.hid+=performance.now()-hidAt; hidAt=0; shownAt=performance.now(); } save(); });
 
 /* ── 이동 ── */
-function go(d){ stopClock(); sub=null; const n=st.idx+d; if(n<0||n>=steps.length) return; if(d<0&&steps[n].t==='start') return;
+function go(d){ stopClock(); sub=null; const n=st.idx+d; if(n<0||n>=steps.length) return;
   st.idx=n; log('step',{to:steps[n].t}); render(); startClock(); }
 function toast(m){ let e=document.querySelector('.toast'); if(!e){e=document.createElement('div');e.className='toast';document.body.appendChild(e);} e.textContent=m; clearTimeout(toastT); toastT=setTimeout(()=>e.remove(),2200); }
 
@@ -103,7 +103,7 @@ function chart(card){ const X=v=>((v+4)/8*310+20).toFixed(1);
 
 const V={
 start:()=>{ const t=mode==='BA'?['약 10분 걸려요','브리핑 하나를 보고, 검토 요청 하나에 의견을 남겨요']:mode==='A'?['약 5분 걸려요','검토 요청 하나를 보고 의견을 남겨요']:['약 5분 걸려요','브리핑 하나를 보고 짧게 답해요'];
- return note()+`<div class="top"><div class="brand">모닝브리프</div><div></div></div>
+ return note()+`<div class="back"><button data-act="home">‹ 처음 화면</button><span></span></div><div class="top"><div class="brand">모닝브리프</div><div></div></div>
  <div class="h1">${mode==='A'?'검토 요청 하나에<br>의견을 남겨 주세요':'AI 투자 브리핑을<br>써 보고 의견을 주세요'}</div>
  <div class="lead">여러 AI 가 함께 만든 투자 리서치를 사람들이 어떻게 쓰는지 알아보는 연구예요. 맞고 틀린 답은 없어요.</div>
  <div class="panel">${[['clock',t[0],t[1]],['cal','과거 자료예요','2026년 6월의 기록이에요. 투자 조언이 아니에요.'],['pen','고른 답과 본 과정을 기록해요','고른 답, 적은 말, 펼쳐 본 내용, 본 시간'],['lock','참가 번호로만 기록해요','이름은 입력하지 않아요.'],['doc','수업 프로젝트 보고서와 발표에 써요','여러 사람의 의견을 모아 싣고, 인용은 번호로 해요.'],(SUBMIT?['share','제출하면 연구용 구글 시트에 저장돼요','연구 담당자만 볼 수 있어요.']:['share','결과는 1:1로 보내요','링크를 보내 준 연구 담당자 한 사람만 받아요.']),['exit','언제든 그만둘 수 있어요','보낸 뒤에도 번호를 알려 주면 지워요.']].map(([i,a,b])=>`<div class="li"><div class="dot">${ic(i)}</div><div class="tx"><div class="nm">${a}</div><div class="sm2">${b}</div></div></div>`).join('')}</div>
@@ -131,7 +131,7 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
     <button class="link" data-act="source" data-sid="${esc(src.id)}" data-from="link"><span>이 자료 전체 보기</span><span class="chev">›</span></button>`:''}
    <button class="link" data-act="sources"><span>AI가 본 자료 목록 · ${d.sources.length}건</span><span class="chev">›</span></button></div>`+sticky('브리핑으로 돌아가기','closesub'); }
  const top1=p.target.find(x=>x.code===d.code)||p.target[0], more=p.target.length-1, evOpen=opened(s,'ev'), wOpen=opened(s,'weights'), all=opened(s,'all');
- return note(d)+(st.ret!=null?`<div class="back"><button data-act="ret">‹ 질문으로 돌아가기</button><span>다시 보는 중</span></div>`:s.b?`<div class="back"><button data-act="back">‹ 첫 번째 브리핑</button><span></span></div>`:'')+topbar('투자 브리핑')+`<div style="margin:4px 0 16px"><div style="font-size:14px;font-weight:600;color:var(--mute)">판단일 아침 8시 · 장 시작 전</div><div style="font-size:24px;font-weight:700;color:var(--ink);line-height:1.4;margin-top:6px">AI 분석가 6명이 전날까지의 자료로<br>오늘 담을 비중을 정했어요</div><div style="font-size:16px;color:var(--body);line-height:1.6;margin-top:10px">${esc(d.name)}는 6명 가운데 ${o.up}명이 ‘오른다’고 봤어요. 성과가 좋았던 분석가에게 가중치를 더 주고 합쳤더니 ${esc(d.name)} 비중이 ${pc((p.target.find(x=>x.code===d.code)||p.target[0]).w)}${p.cash>0.005?`, 현금이 ${pc(p.cash)}`:''}가 됐어요. 아래에서 분석가마다 어떻게 판단했는지 볼 수 있어요.</div></div>
+ return note(d)+(st.ret!=null?`<div class="back"><button data-act="ret">‹ 질문으로 돌아가기</button><span>다시 보는 중</span></div>`:`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`)+topbar('투자 브리핑')+`<div style="margin:4px 0 16px"><div style="font-size:14px;font-weight:600;color:var(--mute)">판단일 아침 8시 · 장 시작 전</div><div style="font-size:24px;font-weight:700;color:var(--ink);line-height:1.4;margin-top:6px">AI 분석가 6명이 전날까지의 자료로<br>오늘 담을 비중을 정했어요</div><div style="font-size:16px;color:var(--body);line-height:1.6;margin-top:10px">${esc(d.name)}는 6명 가운데 ${o.up}명이 ‘오른다’고 봤어요. 성과가 좋았던 분석가에게 가중치를 더 주고 합쳤더니 ${esc(d.name)} 비중이 ${pc((p.target.find(x=>x.code===d.code)||p.target[0]).w)}${p.cash>0.005?`, 현금이 ${pc(p.cash)}`:''}가 됐어요. 아래에서 분석가마다 어떻게 판단했는지 볼 수 있어요.</div></div>
  <div class="card"><div class="k">모의 포트폴리오 · 오늘 담을 비중</div><div class="big">${esc(top1.name)} 비중 ${pc(top1.w)}</div><div class="s">현금 비중 ${pc(p.cash)} · AI 분석가 6명의 판단을 가중치로 합친 모의 비중이에요</div>
   <div class="hold">${p.target.map(t=>`<div class="hrow"><span>${esc(t.name)}</span><b>${pc(t.w)}</b></div>`).join('')}${p.cash>0.005?`<div class="hrow"><span>현금</span><b>${pc(p.cash)}</b></div>`:''}</div></div>
  <h2>${esc(d.name)} <small style="margin-left:auto">${esc(m.prev)} 종가</small></h2>
@@ -161,7 +161,7 @@ review:()=>{ const A=C.A,items=Object.fromEntries(A.checklist.flatMap(g=>g.items
   return note()+`<div class="back"><button data-act="closesub">‹ 검토 요청</button><span>연구팀이 확인한 내용</span></div><div class="title">${esc(k.t)}</div><div class="sub">${esc(k.one)}</div>
   <div class="panel" style="margin-top:16px">${(k.items||[]).map(id=>`<div class="oth"><div class="one2">${esc(items[id].t)}</div><div class="meta">확인할 것 · ${esc(items[id].q)}</div><div class="sm2" style="margin-top:4px">${esc(items[id].f)}</div></div>`).join('')}
    ${(k.diag||[]).map(id=>`<div class="oth"><div class="one2">${esc(diag[id].q.replace(/^[①-④] /,''))}</div>${diag[id].rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join('')}</div>`+sticky('검토 요청으로 돌아가기','closesub'); }
- return note()+topbar('검토 요청')+`<div class="card"><div class="k">${esc(A.request.label)}</div><div class="big" style="font-size:24px">${esc(A.request.title)}</div><div class="s">${esc(A.request.sub)}</div></div>
+ return note()+`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`+topbar('검토 요청')+`<div class="card"><div class="k">${esc(A.request.label)}</div><div class="big" style="font-size:24px">${esc(A.request.title)}</div><div class="s">${esc(A.request.sub)}</div></div>
  <div class="lead" style="margin:16px 0 0">아래 결과를 보고, 궁금한 것이 있으면 확인한 뒤, 맨 아래에서 검토 의견을 남겨 주세요.</div>
  <h2>핵심 결과</h2><div class="panel pad"><div class="h3">${esc(A.card.title)}</div><div class="meta">${esc(A.headline)}</div>${chart(A.card)}
   <button class="fold" data-act="amore"><span>결과 자세히 보기</span><span>${st.A.more?'⌃':'⌄'}</span></button>
@@ -172,7 +172,7 @@ aq:()=>{ const A=C.A,qs=[A.q1,A.q2,A.q3]; return note()+back('검토 요청 다�
  <h2>하시는 일</h2>${A.background.map(q=>qHtml(Object.assign({},q,{grid:true}),'bg')).join('')}`+sticky('마치기','next',!(allDone(qs,'a')&&allDone(A.background,'bg'))); },
 end:()=>{ const lead=!SUBMIT?'결과 파일을 공유하거나 복사한 글을 붙여 넣어, 링크를 보내 준 연구 담당자에게 카카오톡 1:1로 보내 주세요.'
   :st.sentRemote?'제출됐어요. 이제 창을 닫아도 돼요. 고맙습니다.':st.sendFail?'제출이 되지 않았어요. 다시 눌러 보고, 그래도 안 되면 아래 ‘결과 텍스트 복사하기’로 복사해 연구 담당자에게 1:1로 보내 주세요.':'아래 버튼을 누르면 결과가 연구 담당자에게 제출돼요.';
- return note()+`<div class="center"><div class="done">${ic('check')}</div><div class="h1">${SUBMIT&&st.sentRemote?'제출을 마쳤어요':'모두 마쳤어요'}</div><div class="lead">${lead}</div></div>
+ return note()+(st.sentRemote?'':`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`)+`<div class="center"><div class="done" style="margin-top:${st.sentRemote?72:24}px">${ic('check')}</div><div class="h1">${SUBMIT&&st.sentRemote?'제출을 마쳤어요':'모두 마쳤어요'}</div><div class="lead">${lead}</div></div>
  <div class="panel" style="margin-top:8px"><div class="kv"><span>참여한 것</span><span>${mode==='BA'?'브리핑 · 검토 요청':mode==='A'?'검토 요청':'브리핑'}</span></div><div class="kv"><span>참가 번호</span><span>${esc(code)}</span></div></div>
  ${mode.includes('A')?`<div class="panel" style="margin-top:12px"><button class="fold2" data-act="team"><span>연구팀의 판단 보기</span><span class="chev">${st.teamOpen?'⌃':'⌄'}</span></button>${st.teamOpen?`<div class="sm2" style="padding-bottom:16px">${esc(C.A.team)}</div>`:''}</div>`:''}
  <button class="link" data-act="copy"><span>결과 텍스트 복사하기</span><span class="chev">›</span></button>`+(SUBMIT?sticky(st.sentRemote?'제출 완료':(sending?'제출하는 중…':'결과 제출하기'),'submitRemote',st.sentRemote||sending):sticky('결과 파일 공유하기','send')); }
@@ -189,6 +189,7 @@ $.addEventListener('click',e=>{ const dead=e.target.closest('[data-dead]'); if(d
  if(act==='ret'){ stopClock(); st.idx=st.ret; st.ret=null; sub=null; log('return'); render(); return; }
  if(act==='next') return go(1);
  if(act==='back') return go(-1);
+ if(act==='home'){ location.href=(/^(127\.0\.0\.1|localhost)$/.test(location.hostname)?'start.html':'./')+(TEST_LINK?'?test=1':''); return; }
  if(act==='consent'){st.consent=!st.consent; log('consent',{v:st.consent}); return render();}
  if(act==='prof'){st.profile[b.dataset.k]=b.dataset.v; save(); return render();}
  if(act==='pnext'){ if(st.profile.fin==='n'&&st.profile.exp==='none'){ sub={v:'inel'}; log('ineligible'); return render(); } return go(1); }
