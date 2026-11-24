@@ -1,7 +1,7 @@
 'use strict';
 /* 사용자 평가(2026-11-24 계획) — 한 링크로 끝까지. 참가 번호가 흐름을 정한다(참가자가 고르지 않는다).
-   개인 투자자 G: 안내·동의 → 브리핑 둘(자유롭게 봄) → 두 문항 → 제출
-   종사자 E: 안내·동의 → 브리핑 둘 → 두 문항 → 검토 요청 카드 → 두 문항 → 제출 (only=a 면 브리핑 없이 검토만)
+   개인 투자자 G: 안내·동의 → 브리핑 하나(자유롭게 봄) → 세 문항 → 제출
+   종사자 E: 안내·동의 → 브리핑 하나 → 세 문항 → 검토 요청 → 검토 의견 → 제출 (only=a 면 브리핑 없이 검토만)
    답을 맞고 틀림으로 채점하지 않는다. 결론을 먼저 보이고, 근거·세부는 펼쳐서 본다. 화면 규칙은 index.html 의 디자인 규칙 그대로. */
 const S=window.STIMULI,C=window.STUDY,$=document.getElementById('app'),Q=new URLSearchParams(location.search);
 /* 결과 자동 제출 주소(구글 Apps Script 웹 앱의 /exec). 비어 있으면 파일 공유·복사로 받는다. 로컬 시험 때만 ?submit= 로 바꿀 수 있다 */
@@ -28,12 +28,13 @@ const code=(Q.get('p')||'').toUpperCase(), valid=/^[EG]\d\d$/.test(code)&&+code.
 const mode=code[0]==='G'?'B':(Q.get('only')==='a'?'A':'BA'), order=valid?(S.assign[code]||((+code.slice(1)-1)%4)+1):1;
 const ORD={1:[['1','linked'],['2','plain']],2:[['1','plain'],['2','linked']],3:[['2','linked'],['1','plain']],4:[['2','plain'],['1','linked']]};
 const steps=[{t:'start'},{t:'profile'}];
-if(mode.includes('B')){ ORD[order].forEach(([set,cond],b)=>steps.push({t:'brief',day:S.sets[set][0],cond,b})); steps.push({t:'bq'}); }
+/* 11/24 밤: 브리핑은 하나(5월 14일 LG전자, 출처가 이어진 버전) — 두 버전 비교는 하지 않는다 */
+if(mode.includes('B')){ steps.push({t:'brief',day:S.sets['1'][0],cond:'linked',b:0},{t:'bq'}); }
 if(mode.includes('A')) steps.push({t:'review'},{t:'aq'});
 steps.push({t:'end'});
 
 /* ── 상태와 기록 ── */
-const KEY='mb4_'+code+'_'+mode;
+const KEY='mb5_'+code+'_'+mode;
 let st={v:2,idx:0,t0:Date.now(),consent:false,profile:{},B:{cases:{},answers:{}},A:{answers:{},bg:{},cards:[],more:false},events:[],dead:0};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.v===2&&s.B&&s.B.answers&&s.A&&s.A.cards&&!Q.get('reset')) st=s;}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}};
@@ -85,7 +86,7 @@ function chart(card){ const X=v=>((v+4)/8*310+20).toFixed(1);
    ${[-4,-2,0,2,4].map(v=>`<text x="${X(v)}" y="${card.bars.length*56+18}" font-size="11" fill="#6B6F76" text-anchor="middle">${v>0?'+':''}${v}</text>`).join('')}</svg>`; }
 
 const V={
-start:()=>{ const t=mode==='BA'?['약 10분 걸려요','브리핑 두 개를 보고, 검토 요청 하나에 의견을 남겨요']:mode==='A'?['약 5분 걸려요','검토 요청 하나를 보고 의견을 남겨요']:['약 7분 걸려요','브리핑 두 개를 보고 짧게 답해요'];
+start:()=>{ const t=mode==='BA'?['약 10분 걸려요','브리핑 하나를 보고, 검토 요청 하나에 의견을 남겨요']:mode==='A'?['약 5분 걸려요','검토 요청 하나를 보고 의견을 남겨요']:['약 5분 걸려요','브리핑 하나를 보고 짧게 답해요'];
  return note()+`<div class="top"><div class="brand">모닝브리프</div><div></div></div>
  <div class="h1">${mode==='A'?'검토 요청 하나에<br>의견을 남겨 주세요':'AI 투자 브리핑을<br>써 보고 의견을 주세요'}</div>
  <div class="lead">여러 AI 가 함께 만든 투자 리서치를 사람들이 어떻게 쓰는지 알아보는 연구예요. 맞고 틀린 답은 없어요.</div>
@@ -114,7 +115,7 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
     <button class="link" data-act="source" data-sid="${esc(src.id)}" data-from="link"><span>이 자료 전체 보기</span><span class="chev">›</span></button>`:''}
    <button class="link" data-act="sources"><span>AI가 본 자료 목록 · ${d.sources.length}건</span><span class="chev">›</span></button></div>`+sticky('브리핑으로 돌아가기','closesub'); }
  const top1=p.target[0], more=p.target.length-1, evOpen=opened(s,'ev'), wOpen=opened(s,'weights'), all=opened(s,'all');
- return note(d)+(st.ret!=null?`<div class="back"><button data-act="ret">‹ 질문으로 돌아가기</button><span>다시 보는 중</span></div>`:s.b?`<div class="back"><button data-act="back">‹ 첫 번째 브리핑</button><span></span></div>`:'')+topbar('투자 브리핑')+`<div class="sub" style="margin-top:-8px">${esc(d.dateLabel)} 오전 8시 · 브리핑 ${s.b+1} / 2</div>
+ return note(d)+(st.ret!=null?`<div class="back"><button data-act="ret">‹ 질문으로 돌아가기</button><span>다시 보는 중</span></div>`:s.b?`<div class="back"><button data-act="back">‹ 첫 번째 브리핑</button><span></span></div>`:'')+topbar('투자 브리핑')+`<div class="sub" style="margin-top:-8px">${esc(d.dateLabel)} 오전 8시</div>
  <div class="card"><div class="k">모의 포트폴리오 · 오늘 담을 비중</div><div class="big">${esc(top1.name)} 비중 ${pc(top1.w)}</div><div class="s">현금 비중 ${pc(p.cash)} · AI 분석가 6명의 판단을 가중치로 합친 모의 비중이에요</div>
   <div class="hold">${p.target.map(t=>`<div class="hrow"><span>${esc(t.name)}</span><b>${pc(t.w)}</b></div>`).join('')}${p.cash>0.005?`<div class="hrow"><span>현금</span><b>${pc(p.cash)}</b></div>`:''}</div></div>
  <h2>${esc(d.name)} <small style="margin-left:auto">${esc(m.prev)} 종가</small></h2>
@@ -129,8 +130,10 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
     ${p.agents.filter(a=>a.act==='이 종목 추천'&&a.w>0.0005).sort((x,y)=>y.w/y.n-x.w/x.n).map(a=>`<div class="kv"><span>분석가 ${a.agent} · 가중치 ${pc(a.w)} ÷ 추천 ${a.n}종목</span><span>${(a.w/a.n*100).toFixed(1)}%</span></div>`).join('')}</div>
    ${p.agents.map(a=>wrow(`분석가 ${a.agent}`,a.w)+`<div class="meta wm">${esc(a.act)}${a.n>1?` · 추천 ${a.n}종목`:''}</div>`).join('')}</div>`:''}
   <button class="fold2" data-act="sources"><span>AI가 본 자료 목록 · ${d.sources.length}건</span><span class="chev">›</span></button></div>`
- +(st.ret!=null?sticky('질문으로 돌아가기','ret'):sticky(s.b?'다 봤어요':'다음 브리핑 보기','next')); },
-bq:()=>note()+back('두 번째 브리핑','')+`<div class="h1">브리핑은 어떠셨어요?</div><div class="two" style="margin-top:12px">${[0,1].map(b=>`<button class="cap sec" data-act="revisit" data-b="${b}">${b?'두':'첫'} 번째 브리핑 다시 보기</button>`).join('')}</div>${C.B.questions.map(q=>qHtml(q,'b')).join('')}`+sticky(mode==='BA'?'다음으로':'마치기','next',!allDone(C.B.questions,'b')),
+ +(st.ret!=null?sticky('질문으로 돌아가기','ret'):sticky('다 봤어요','next')); },
+bq:()=>{ const d=S.days[S.sets['1'][0]],w=pc(d.portfolio.target.find(x=>x.code===d.code).w),fill=x=>String(x).split('{name}').join(d.name).split('{w}').join(w);
+ const qs=C.B.questions.map(q=>Object.assign({},q,{q:fill(q.q),options:q.options&&q.options.map(([k,l])=>[k,fill(l)])}));
+ return note()+`<div class="back"><button data-act="revisit" data-b="0">‹ 브리핑 다시 보기</button><span></span></div><div class="h1">브리핑을 받았다고 생각해 보세요</div>${qs.map(q=>qHtml(q,'b').replace('</div><div class="opts',q.lead?`</div><div class="meta" style="margin-top:4px">${esc(fill(q.lead))}</div><div class="opts`:'</div><div class="opts')).join('')}`+sticky(mode==='BA'?'다음으로':'마치기','next',!allDone(C.B.questions,'b')); },
 review:()=>{ const A=C.A,items=Object.fromEntries(A.checklist.flatMap(g=>g.items).map(x=>[x.id,x])),diag=Object.fromEntries(A.diagnosis.map(d=>[d.id,d]));
  if(sub&&sub.v==='card'){ const k=A.cards.find(c=>c.id===sub.id);
   return note()+`<div class="back"><button data-act="closesub">‹ 검토 요청</button><span>연구팀이 확인한 내용</span></div><div class="title">${esc(k.t)}</div><div class="sub">${esc(k.one)}</div>

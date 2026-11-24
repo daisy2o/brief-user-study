@@ -199,7 +199,7 @@ function render(){
   <div class="panel pad" style="margin-top:12px"><div class="q" style="margin-bottom:12px">어떤 분이세요?</div>
    <div class="two">${opt('g','E','금융회사에서 일해요','투자·리서치·심사·상품기획, 지금 또는 1년 이상')}${opt('g','G','주식을 직접 투자해요','금융회사 경험은 없어요')}</div></div>`+
   (g==='E'?`<div class="panel pad" style="margin-top:12px"><div class="q" style="margin-bottom:12px">시간이 얼마나 되세요?</div>
-   <div class="two">${opt('len','BA','약 10분','브리핑 둘 + 검토 요청')}${opt('len','A','약 5분','검토 요청만')}</div></div>`:'')+
+   <div class="two">${opt('len','BA','약 10분','브리핑 하나 + 검토 요청')}${opt('len','A','약 5분','검토 요청만')}</div></div>`:'')+
   (err?`<div class="lead" style="color:#B42318;margin-top:12px">${err}</div>`:'')+
   `<div class="sticky"><button class="cap pri" data-act="start" ${ready&&!busy?'':'disabled'}>${busy?'준비하는 중…':'시작하기'}</button></div>`;
 }
