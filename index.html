@@ -206,15 +206,16 @@ textarea{width:100%;min-height:84px;border:0;background:var(--surface);border-ra
 <main class="entry" id="app"></main>
 <script>
 const SUBMIT_URL='https://script.google.com/macros/s/AKfycbzN1F7-0oamiwVFQXjuDtPf-lUZ1IfBDL0n0wCGupwHCcjiK7JuKJv7OLIwfApjHRBqZA/exec';
-const Q=new URLSearchParams(location.search), TEST=Q.get('test')==='1';
+const Q=new URLSearchParams(location.search), LOCAL=/^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+const TEST=LOCAL||Q.get('test')==='1';
 const $=document.getElementById('app'); let g=null, busy=false, err='';
 const KEY='mb_claim_'+(TEST?'test':'live');
-const go=(c,only)=>{ const q=new URLSearchParams({p:c}); if(only) q.set('only','a'); if(TEST) q.set('test','1'); location.replace('study.html?'+q.toString()); };
+const go=c=>{ const q=new URLSearchParams({p:c}); if(TEST) q.set('test','1'); location.replace('study.html?'+q.toString()); };
 /* 하던 참여가 있으면 바로 넘기지 않고 '이어서 하기 / 처음부터 다시 고르기'를 보인다(11/24 회의 — 모드를 바꿀 수 있게) */
 let saved=null; try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.code&&!Q.get('reset')) saved=s; }catch(e){}
 const participationOptions=[
   {group:'E', label:'금융업 종사자', time:'약 10분', task:'브리핑 체험과 시범 운영 검토', criteria:'금융회사에서 투자, 리서치, 심사, 상품기획 관련 업무를 현재 하거나 1년 이상 해 본 분'},
-  {group:'G', label:'개인 투자자', time:'약 5분', task:'브리핑 체험과 짧은 설문', criteria:'주식, 펀드, ETF 등에 직접 투자하는 분'}
+  {group:'G', label:'개인 투자자', time:'약 5분', task:'브리핑 활용에 관한 짧은 질문', criteria:'주식, 펀드, ETF 등에 직접 투자하는 분'}
 ];
 const notices=()=>`${TEST?'<div class="note test-note">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>':''}
   <div class="brand">모닝브리프</div>`;
@@ -230,7 +231,7 @@ function render(){
     return; }
   const ready=participationOptions.some(({group})=>g===group);
   $.innerHTML=notices()+`
-  <div class="entry-head"><h1>AI 투자 브리핑을 써 보고<br>의견을 들려주세요</h1><p>브리핑을 살펴보고 어떤 정보가 도움이 됐는지 알려 주세요.</p></div>
+  <div class="entry-head"><h1>AI 투자 브리핑을 써 보고<br>의견을 들려주세요</h1><p>과거 모의투자 브리핑을 살펴보고 어떻게 활용할지 알려 주세요.</p></div>
   <h2 class="entry-label" id="participation-label">참여 유형을 선택해 주세요</h2>
   <div class="entry-options" role="group" aria-labelledby="participation-label">${participationOptions.map(option).join('')}</div>
   <div class="entry-footer">
@@ -239,14 +240,17 @@ function render(){
   </div>`;
 }
 $.addEventListener('click',async e=>{ const b=e.target.closest('button'); if(!b||b.disabled) return;
-  if(b.dataset.act==='resume'){ return go(saved.code,saved.only); }
+  if(b.dataset.act==='resume'){ return go(saved.code); }
   if(b.dataset.act==='restart'){ try{localStorage.removeItem(KEY);}catch(x){} saved=null; g=null; return render(); }
   if(b.dataset.k==='g'){ g=b.dataset.v; err=''; render(); $.querySelector('[data-v="'+g+'"]').focus({preventScroll:true}); return; }
   if(b.dataset.act==='start'){ busy=true; err=''; render();
-    try{ const r=await fetch(SUBMIT_URL+'?claim='+g+(TEST?'&test=1':'')); const j=await r.json();
-      if(!j||!j.ok||!j.code) throw new Error((j&&j.error)||'bad');
-      const only=false; try{localStorage.setItem(KEY,JSON.stringify({code:j.code,only}));}catch(e){}
-      go(j.code,only); }
+    try{
+      let code=g+'90';
+      if(!LOCAL){ const r=await fetch(SUBMIT_URL+'?claim='+g+(TEST?'&test=1':'')); const j=await r.json();
+        if(!j||!j.ok||!new RegExp('^'+g+'[0-9]{2}$').test(j.code)) throw new Error((j&&j.error)||'bad');
+        code=j.code; }
+      try{localStorage.setItem(KEY,JSON.stringify({code}));}catch(e){}
+      go(code); }
     catch(x){ busy=false; err='연결이 잠시 안 돼요. 다시 눌러 주세요.'; render(); } } });
 render();
 </script>
