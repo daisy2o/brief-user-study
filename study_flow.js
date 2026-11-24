@@ -175,7 +175,7 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
  ${wOpen?weightDetails(p,top1):''}</div>
  <h2>${esc(d.name)}</h2>
  <div class="panel pad"><div class="meta" style="font-weight:600">전날 종가</div><div class="row2"><div><div class="price" style="margin-top:4px">${won(m.close)}</div><div class="chg">전날 하루 등락률 <span class="${m.pct>=0?'up':'down'}">${m.pct>=0?'+':''}${m.pct.toFixed(2)}%</span> <span class="meta">(${m.chg>=0?'+':''}${Math.round(m.chg).toLocaleString('ko-KR')}원)</span></div></div></div></div>
- <div class="panel pad" style="margin-top:12px"><div class="meta" style="font-weight:600">AI 의 전망 · 다음 거래일</div><div class="h3" style="margin-top:6px">${opin(o)}</div><div class="bar">${Array.from({length:6},(_,i)=>`<i class="${i<o.up?'':'off'}"></i>`).join('')}</div>
+ <div class="panel pad" style="margin-top:12px"><div class="meta" style="font-weight:600">AI의 전망 · 다음 거래일</div><div class="h3" style="margin-top:6px">${opin(o)}</div><div class="bar">${Array.from({length:6},(_,i)=>`<i class="${i<o.up?'':'off'}"></i>`).join('')}</div>
   ${d.marketFlags.map(f=>{ const g=String(f); if(g.startsWith('의견 차이')) return ''; const v=g.match(/거래량 ([\d.]+)배/); return v?`전날 거래량이 평소의 ${v[1]}배였어요`:esc(g); }).filter(Boolean).map(x=>`<div class="meta" style="margin-top:6px">눈여겨볼 점 · ${x}</div>`).join('')}</div>
  <div class="panel" style="margin-top:12px"><div style="padding:16px 0 4px"><div style="font-size:17px;font-weight:700;color:var(--ink)">AI 분석가 6명의 판단</div></div>
   <button class="fold2" data-act="expand" data-k="help" style="border-top:0;padding:8px 0 14px"><span style="font-size:14px;font-weight:600;color:var(--body)">이 화면 읽는 법</span><span class="chev">${opened(s,'help')?'⌃':'⌄'}</span></button>
@@ -201,7 +201,7 @@ bq:()=>{ const d=S.days[S.sets['1'][0]], p=d.portfolio, stock=p.target.find(x=>x
 review:()=>{ const A=C.A,qs=[A.q1,A.q2,A.q3];
  return note()+`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`+topbar('검토 요청')+`<div class="card"><div class="k">${esc(A.request.label)}</div><div class="big" style="font-size:24px">${esc(A.request.title)}</div><div class="s">${esc(A.request.sub)}</div></div>
  <h2>비교 결과</h2><div class="panel pad"><div class="h3">${esc(A.summary)}</div>${chart(A.card)}<div class="meta" style="margin-top:8px">${esc(A.legend)}</div>
-  <p class="meta">${esc(A.card.scope)} · 원 실행</p>
+  <p class="meta">${esc(A.card.scope)} · 최종 계산</p>
   <dl class="review-findings">${A.keyFindings.map(f=>`<div><dt>${esc(f.title)}</dt><dd>${esc(f.text)}</dd></div>`).join('')}</dl>
   <button class="fold" data-act="amore"><span>비교 결과 자세히 보기</span><span>${st.A.more?'⌃':'⌄'}</span></button>
   ${st.A.more?`<div class="meta" style="margin-top:6px">${esc(A.card.note)}</div>`+A.more.map(m=>`<div class="oth" data-m="${m.id}"><div class="one2">${esc(m.t)}</div><div class="meta mwhy">${esc(m.why)}</div>${m.rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join(''):''}</div>
