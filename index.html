@@ -178,42 +178,70 @@ textarea{width:100%;min-height:84px;border:0;background:var(--surface);border-ra
 .fold2 .cnt{margin-left:6px}
 .top+.sub{margin-bottom:4px}
 .stepbar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}.stepbar div{background:var(--panel);border-radius:16px;padding:10px 8px;font-size:13px;font-weight:600;color:var(--ink);text-align:center}.stepbar b{display:block;font-size:12px;color:var(--mute);font-weight:600}
+.entry{max-width:430px;min-height:100vh;min-height:100svh;margin:0 auto;padding:0 20px calc(24px + env(safe-area-inset-bottom))}
+.entry .brand{margin-top:20px;font-size:18px}
+.entry-head{margin:20px 0 24px}
+.entry-head h1{color:var(--ink);font-size:clamp(24px,6.5vw,28px);line-height:1.3;letter-spacing:-.03em;word-break:keep-all}
+.entry-head p{margin-top:8px;color:var(--body);font-size:14px;word-break:keep-all}
+.entry-label{margin:0 0 10px;font-size:16px}
+.entry-options,.entry-resume{display:grid;gap:10px}
+.entry-option{display:grid;grid-template-columns:minmax(0,1fr) auto 20px;gap:5px 10px;align-items:center;width:100%;padding:15px 16px;background:var(--panel);border:1px solid transparent;border-radius:20px;text-align:left}
+.entry-option[aria-pressed="true"]{border-color:#839B29;background:var(--tint)}
+.entry-option:focus-visible,.entry-action:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.entry-option-name{color:var(--ink);font-size:16px;font-weight:700;word-break:keep-all}
+.entry-option-time{color:var(--body);font-size:13px;font-weight:600;white-space:nowrap}
+.entry-option-check{display:grid;place-items:center;width:20px;height:20px;border:1px solid #848992;border-radius:50%;color:transparent;font-size:13px;font-weight:800;line-height:1}
+.entry-option[aria-pressed="true"] .entry-option-check{border-color:var(--ink);background:var(--ink);color:#fff}
+.entry-option-task,.entry-option-criteria{grid-column:1/-1;word-break:keep-all}
+.entry-option-task{color:var(--ink);font-size:14px}
+.entry-option-criteria{color:var(--mute);font-size:13px}
+.entry-action{width:100%;min-height:52px}
+.entry-action.pri[disabled]{background:#DDE0E5;color:#5B6068}
+.entry-footer{margin-top:20px}
+.entry-error{margin:0 0 10px;color:#B42318}
+.entry .test-note{color:#B42318;font-weight:700}
 </style>
 </head>
 <body>
-<div class="app" id="app"></div>
+<main class="entry" id="app"></main>
 <script>
 const SUBMIT_URL='https://script.google.com/macros/s/AKfycbzN1F7-0oamiwVFQXjuDtPf-lUZ1IfBDL0n0wCGupwHCcjiK7JuKJv7OLIwfApjHRBqZA/exec';
 const Q=new URLSearchParams(location.search), TEST=Q.get('test')==='1';
-const $=document.getElementById('app'); let g=null, len=null, busy=false, err='';
+const $=document.getElementById('app'); let g=null, busy=false, err='';
 const KEY='mb_claim_'+(TEST?'test':'live');
 const go=(c,only)=>{ const q=new URLSearchParams({p:c}); if(only) q.set('only','a'); if(TEST) q.set('test','1'); location.replace('study.html?'+q.toString()); };
 /* 하던 참여가 있으면 바로 넘기지 않고 '이어서 하기 / 처음부터 다시 고르기'를 보인다(11/24 회의 — 모드를 바꿀 수 있게) */
 let saved=null; try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.code&&!Q.get('reset')) saved=s; }catch(e){}
-const opt=(k,v,label,sub)=>`<button class="cap sec ${ (k==='g'?g:len)===v?'sel':''}" data-k="${k}" data-v="${v}" style="height:auto;min-height:56px;flex-direction:column;white-space:normal;padding:10px 12px;line-height:1.35">${label}${sub?`<small style="font-weight:500;font-size:12px;opacity:.75">${sub}</small>`:''}</button>`;
+const participationOptions=[
+  {group:'E', label:'금융업 종사자', time:'약 10분', task:'브리핑 체험과 시범 운영 검토', criteria:'금융회사에서 투자, 리서치, 심사, 상품기획 관련 업무를 현재 하거나 1년 이상 해 본 분'},
+  {group:'G', label:'개인 투자자', time:'약 5분', task:'브리핑 체험과 짧은 설문', criteria:'주식, 펀드, ETF 등에 직접 투자하는 분'}
+];
+const notices=()=>`${TEST?'<div class="note test-note">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>':''}
+  <div class="note">연구용 화면 · 투자 조언 아님</div><div class="brand">모닝브리프</div>`;
+const option=({group,label,time,task,criteria})=>`<button type="button" class="entry-option" data-k="g" data-v="${group}" aria-pressed="${g===group}" ${busy?'disabled':''}>
+  <span class="entry-option-name">${label}</span><span class="entry-option-time">${time}</span><span class="entry-option-check" aria-hidden="true">✓</span>
+  <span class="entry-option-task">${task}</span><span class="entry-option-criteria">${criteria}</span>
+  </button>`;
 function render(){
-  if(saved){ const who=saved.code[0]==='E'?'금융회사 종사자':'개인 투자자';
-    $.innerHTML=(TEST?`<div class="note" style="color:#B42318;font-weight:700">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>`:'')+
-    `<div class="note">연구용 화면 · 투자 조언 아님</div><div class="h1" style="margin-top:24px">하던 참여가 있어요</div>
-    <div class="lead">${who}로 시작했어요. 이어서 하거나, 처음부터 다시 고를 수 있어요.</div>
-    <div class="panel pad" style="margin-top:12px"><div class="two"><button class="cap pri" data-act="resume" style="height:52px">이어서 하기</button><button class="cap sec" data-act="restart" style="height:52px">처음부터 다시 고르기</button></div></div>`;
+  if(saved){ const who=saved.code[0]==='E'?'금융업 종사자':'개인 투자자';
+    $.innerHTML=notices()+`<div class="entry-head"><h1>이어서 참여할까요?</h1><p>이전에 ${who}로 시작했어요.</p></div>
+    <div class="entry-resume"><button type="button" class="cap pri entry-action" data-act="resume">이어서 하기</button>
+    <button type="button" class="cap sec entry-action" data-act="restart">참여 유형 다시 고르기</button></div>`;
     return; }
-  const ready=g==='G'||g==='E';
-  $.innerHTML=(TEST?`<div class="note" style="color:#B42318;font-weight:700">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>`:'')+
-  `<div class="note">연구용 화면 · 투자 조언 아님</div>
-  <div class="h1" style="margin-top:24px">AI 투자 브리핑 연구에<br>참여해 주셔서 고마워요</div>
-  <div class="lead">해당하는 쪽을 골라 주세요. 고른 데 따라 보는 내용과 걸리는 시간이 달라요.</div>
-  <div class="panel pad" style="margin-top:12px"><div class="q" style="margin-bottom:12px">어떤 분이세요?</div>
-   <div class="two">${opt('g','E','금융회사에서 일해요','투자·리서치·심사·상품기획, 지금 또는 1년 이상')}${opt('g','G','개인 투자자예요','주식·펀드·ETF 등에 직접 투자해요')}</div></div>`+
-  (g?`<div class="lead" style="margin-top:12px">${g==='E'?'약 10분 걸려요 · 브리핑 하나를 보고, 검토 요청 하나에 의견을 남겨요':'약 5분 걸려요 · 브리핑 하나를 보고 짧게 답해요'}</div>`:'')+
-  (err?`<div class="lead" style="color:#B42318;margin-top:12px">${err}</div>`:'')+
-  `<div class="sticky"><button class="cap pri" data-act="start" ${ready&&!busy?'':'disabled'}>${busy?'준비하는 중…':'시작하기'}</button></div>`;
+  const ready=participationOptions.some(({group})=>g===group);
+  $.innerHTML=notices()+`
+  <div class="entry-head"><h1>AI 투자 브리핑을 써 보고<br>의견을 들려주세요</h1><p>브리핑을 살펴보고 어떤 정보가 도움이 됐는지 알려 주세요.</p></div>
+  <h2 class="entry-label" id="participation-label">참여 유형을 선택해 주세요</h2>
+  <div class="entry-options" role="group" aria-labelledby="participation-label">${participationOptions.map(option).join('')}</div>
+  <div class="entry-footer">
+    ${err?`<p class="entry-error" role="alert">${err}</p>`:''}
+    <button type="button" class="cap pri entry-action" data-act="start" ${ready&&!busy?'':'disabled'}>${busy?'준비하는 중…':'참여 안내 보기'}</button>
+  </div>`;
 }
 $.addEventListener('click',async e=>{ const b=e.target.closest('button'); if(!b||b.disabled) return;
   if(b.dataset.act==='resume'){ return go(saved.code,saved.only); }
-  if(b.dataset.act==='restart'){ try{localStorage.removeItem(KEY);}catch(x){} saved=null; g=null; len=null; return render(); }
-  if(b.dataset.k==='g'){ g=b.dataset.v; if(g==='G') len=null; err=''; return render(); }
-  if(b.dataset.k==='len'){ len=b.dataset.v; err=''; return render(); }
+  if(b.dataset.act==='restart'){ try{localStorage.removeItem(KEY);}catch(x){} saved=null; g=null; return render(); }
+  if(b.dataset.k==='g'){ g=b.dataset.v; err=''; render(); $.querySelector('[data-v="'+g+'"]').focus({preventScroll:true}); return; }
   if(b.dataset.act==='start'){ busy=true; err=''; render();
     try{ const r=await fetch(SUBMIT_URL+'?claim='+g+(TEST?'&test=1':'')); const j=await r.json();
       if(!j||!j.ok||!j.code) throw new Error((j&&j.error)||'bad');
