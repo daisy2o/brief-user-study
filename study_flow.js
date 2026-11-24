@@ -76,12 +76,13 @@ function answered(q,store){ const v=store[q.id]; if(!shown(q)) return true;
   if(q.type==='textOrNone') return store[q.id+'_none']===true||!!String(v||'').trim();
   if(q.type==='text') return q.optional||!!String(v||'').trim();
   if(v==null) return !!q.optional;
-  return !(q.text&&!q.textOptional&&!String(store[q.id+'_text']||'').trim()); }
+  const need=q.text&&(!q.textOptional||(q.textRequiredFor||[]).includes(v));      // '그 밖'처럼 고르면 한 줄이 필수인 보기
+  return !(need&&!String(store[q.id+'_text']||'').trim()); }
 function qHtml(q,name){ if(!shown(q)) return ''; const store=storeOf(name),v=store[q.id]; let h=`<div class="panel pad" style="margin-top:12px"><div class="q">${esc(q.q)}${q.optional?' <span class="meta">(선택)</span>':''}</div>`;
   if(q.type==='text') h+=`<input type="text" class="line" data-q="${q.id}" data-store="${name}" maxlength="120" placeholder="한 줄로 적어 주세요" value="${esc(v||'')}">`;
   else if(q.type==='textOrNone') h+=(store[q.id+'_none']?'':`<input type="text" class="line" data-q="${q.id}" data-store="${name}" maxlength="120" placeholder="예: 다른 기간에서도 개선이 반복되는지" value="${esc(v||'')}">`)+`<div class="opts" style="margin-top:8px"><button class="optb ${store[q.id+'_none']?'sel':''}" data-act="none" data-q="${q.id}" data-store="${name}">${esc(q.none)}</button></div>`;
   else h+=`<div class="opts ${q.grid?'g2':''}">${q.options.map(([k,l])=>`<button class="optb ${v===k?'sel':''}" data-act="opt" data-q="${q.id}" data-store="${name}" data-v="${esc(k)}">${esc(l)}</button>`).join('')}</div>`;
-  if(q.text&&q.type!=='text'&&v!=null) h+=`<input type="text" class="line" data-q="${q.id}_text" data-store="${name}" maxlength="120" placeholder="${esc(q.text)}${q.textOptional?' (선택)':''}" value="${esc(store[q.id+'_text']||'')}">`;
+  if(q.text&&q.type!=='text'&&v!=null) h+=`<input type="text" class="line" data-q="${q.id}_text" data-store="${name}" maxlength="120" placeholder="${esc(q.text)}${q.textOptional&&!(q.textRequiredFor||[]).includes(v)?' (선택)':''}" value="${esc(store[q.id+'_text']||'')}">`;
   return h+'</div>'; }
 const allDone=(qs,name)=>qs.every(q=>answered(q,storeOf(name)));
 

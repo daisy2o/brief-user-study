@@ -65,7 +65,7 @@ window.STUDY = {
   intro: "개장 전에 받은 브리핑이라고 생각하고, 평소 하던 대로 봐 주세요.",
   questions: [
    {id: "B1", q: "브리핑은 {name} 비중을 {w}로 잡았어요. 어떻게 하시겠어요?", type: "single", options: [["follow", "그대로 따른다"], ["less", "비중을 줄여서 따른다"], ["check", "더 확인한 뒤 정한다"], ["no", "따르지 않는다"]], text: "이유를 한 줄로 적어 주세요", textOptional: true},
-   {id: "B2", q: "따르기 전에 가장 먼저 확인하고 싶은 것 한 가지는 무엇인가요?", type: "text"}
+   {id: "B2", q: "따르기 전에 가장 먼저 확인하고 싶은 것 한 가지는 무엇인가요?", type: "single", options: [["how", "이 비중이 어떻게 정해졌는지"], ["evidence", "AI 가 든 근거가 실제 자료와 맞는지"], ["drop", "전날 주가가 왜 크게 떨어졌는지"], ["news", "이 화면에 없는 뉴스·증권사 리포트"], ["past", "이 방식이 과거에 잘 맞았는지"], ["etc", "그 밖(직접 적기)"]], text: "한 줄로 덧붙여 주세요", textOptional: true, textRequiredFor: ["etc"]}
   ],
   /* 개인 투자자만(종사자는 검토 의견 화면의 '하시는 일'로 묻는다) — 누가 답했는지 설명하기 위한 두 문항 */
   background: [
