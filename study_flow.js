@@ -4,15 +4,15 @@
    종사자 E: 안내·동의 → 브리핑 하나 → 두 문항 → 검토 요청 → 검토 의견 → 제출 (모두 같은 흐름)
    답을 맞고 틀림으로 채점하지 않는다. 결론을 먼저 보이고, 근거·세부는 펼쳐서 본다. 화면 규칙은 index.html 의 디자인 규칙 그대로. */
 const S=window.STIMULI,C=window.STUDY,$=document.getElementById('app'),Q=new URLSearchParams(location.search);
-/* 11/24 회의 뒤 결정: 참가자가 그 뒤 주가를 기억해 답이 바뀌지 않게 종목명·날짜를 가린다(AI 가 본 자료의 내용·수치는 그대로).
-   종목은 브리핑 종목 = 종목 A, 나머지는 비중 순서로 B·C…, 날짜는 '판단일'·'전날'. */
+/* 11/24 회의 뒤 결정: 참가자가 그 뒤 주가를 기억해 답이 바뀌지 않게 날짜를 가린다('판단일'·'전날', AI 가 본 자료의 내용·수치는 그대로).
+   11/24 밤 Daisy "되돌려": 종목명 가림(종목 A·B…)은 풀고 실제 종목명을 보인다 — 날짜 가림만 남는다. */
 const AG=window.AGENTS||{};
-(function anonymize(){ const L='ABCDEFGHIJKLMNOP';
- Object.values(S.days).forEach(d=>{ const names=[d.name,...d.portfolio.target.map(t=>t.name).filter(n=>n!==d.name),...((d.market&&d.market.watch)||[]).map(w=>w.name)];
-  const map={}; names.forEach(n=>{ if(n&&!(n in map)) map[n]='종목 '+L[Object.keys(map).length]; });
-  const [y,mo,dd]=d.date.split('-').map(Number), prev=d.sources&&d.sources[0]&&d.sources[0].date;
-  const re=new RegExp(Object.keys(map).sort((a,b)=>b.length-a.length).map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');
-  const fix=s=>String(s).replace(re,m=>map[m]).replace(/\d{4}-\d{2}-\d{2}/g,x=>x===d.date?'판단일':'전날').replace(/\d{1,2}월 \d{1,2}일(?: [월화수목금토일]요일)?/g,x=>x.startsWith(`${mo}월 ${dd}일`)?'판단일':'전날');
+/* 받침에 맞는 조사(은/는) — 한글이 아닌 끝 글자는 '는' */
+const eun=n=>{ const c=String(n).slice(-1).charCodeAt(0); return c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28?'은':'는'; };
+(function anonymize(){
+ Object.values(S.days).forEach(d=>{
+  const [y,mo,dd]=d.date.split('-').map(Number);
+  const fix=s=>String(s).replace(/\d{4}-\d{2}-\d{2}/g,x=>x===d.date?'판단일':'전날').replace(/\d{1,2}월 \d{1,2}일(?: [월화수목금토일]요일)?/g,x=>x.startsWith(`${mo}월 ${dd}일`)?'판단일':'전날');
   const walk=o=>{ if(Array.isArray(o)) return o.map(walk); if(o&&typeof o==='object'){ for(const k in o){ if(['id','code','link','truth'].includes(k)) continue; o[k]=walk(o[k]); } return o; } return typeof o==='string'?fix(o):o; };
   ['name','dateLabel','market','sources','items','others','portfolio','marketFlags'].forEach(k=>{ if(d[k]!=null) d[k]=walk(d[k]); });
   d.anon=true; });
@@ -66,7 +66,7 @@ document.addEventListener('visibilitychange',()=>{ const s=step(); if(s.t!=='bri
 
 /* ── 이동 ── */
 function go(d){ stopClock(); sub=null; const n=st.idx+d; if(n<0||n>=steps.length) return;
-  st.idx=n; log('step',{to:steps[n].t}); render(); startClock(); }
+  st.ret=null; st.idx=n; log('step',{to:steps[n].t}); render(); startClock(); }
 function toast(m){ let e=document.querySelector('.toast'); if(!e){e=document.createElement('div');e.className='toast';document.body.appendChild(e);} e.textContent=m; clearTimeout(toastT); toastT=setTimeout(()=>e.remove(),2200); }
 
 /* ── 문항 ── */
@@ -78,10 +78,10 @@ function answered(q,store){ const v=store[q.id]; if(!shown(q)) return true;
   if(v==null) return !!q.optional;
   return !(q.text&&!q.textOptional&&!String(store[q.id+'_text']||'').trim()); }
 function qHtml(q,name){ if(!shown(q)) return ''; const store=storeOf(name),v=store[q.id]; let h=`<div class="panel pad" style="margin-top:12px"><div class="q">${esc(q.q)}${q.optional?' <span class="meta">(선택)</span>':''}</div>`;
-  if(q.type==='text') h+=`<textarea data-q="${q.id}" data-store="${name}" maxlength="400">${esc(v||'')}</textarea>`;
-  else if(q.type==='textOrNone') h+=(store[q.id+'_none']?'':`<textarea data-q="${q.id}" data-store="${name}" maxlength="300" placeholder="예: 다른 기간에서도 비용을 빼고 개선이 반복되는지">${esc(v||'')}</textarea>`)+`<div class="opts" style="margin-top:8px"><button class="optb ${store[q.id+'_none']?'sel':''}" data-act="none" data-q="${q.id}" data-store="${name}">${esc(q.none)}</button></div>`;
+  if(q.type==='text') h+=`<input type="text" class="line" data-q="${q.id}" data-store="${name}" maxlength="120" placeholder="한 줄로 적어 주세요" value="${esc(v||'')}">`;
+  else if(q.type==='textOrNone') h+=(store[q.id+'_none']?'':`<input type="text" class="line" data-q="${q.id}" data-store="${name}" maxlength="120" placeholder="예: 다른 기간에서도 개선이 반복되는지" value="${esc(v||'')}">`)+`<div class="opts" style="margin-top:8px"><button class="optb ${store[q.id+'_none']?'sel':''}" data-act="none" data-q="${q.id}" data-store="${name}">${esc(q.none)}</button></div>`;
   else h+=`<div class="opts ${q.grid?'g2':''}">${q.options.map(([k,l])=>`<button class="optb ${v===k?'sel':''}" data-act="opt" data-q="${q.id}" data-store="${name}" data-v="${esc(k)}">${esc(l)}</button>`).join('')}</div>`;
-  if(q.text&&q.type!=='text'&&v!=null) h+=`<textarea data-q="${q.id}_text" data-store="${name}" maxlength="300" placeholder="${esc(q.text)}${q.textOptional?' (선택)':''}">${esc(store[q.id+'_text']||'')}</textarea>`;
+  if(q.text&&q.type!=='text'&&v!=null) h+=`<input type="text" class="line" data-q="${q.id}_text" data-store="${name}" maxlength="120" placeholder="${esc(q.text)}${q.textOptional?' (선택)':''}" value="${esc(store[q.id+'_text']||'')}">`;
   return h+'</div>'; }
 const allDone=(qs,name)=>qs.every(q=>answered(q,storeOf(name)));
 
@@ -89,7 +89,7 @@ const allDone=(qs,name)=>qs.every(q=>answered(q,storeOf(name)));
 const note=d=>(TEST_LINK?`<div class="note" style="color:#B42318;font-weight:700">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>`:'')+`<div class="note">연구용 화면 · 투자 조언 아님${d?(d.anon?' · 과거 어느 하루의 기록':' · '+esc(d.date.slice(0,4))+'년 '+esc(d.dateLabel.split(' ').slice(0,2).join(' '))+'의 기록'):''}</div>`;
 const sticky=(label,act,dis)=>`<div class="sticky"><button class="cap pri" data-act="${act}" ${dis?'disabled':''}>${label}</button></div>`;
 const back=(label,right)=>`<div class="back"><button data-act="back">‹ ${label||'이전'}</button><span>${right||''}</span></div>`;
-const topbar=t=>`<div class="top"><div class="brand">${t}</div><div class="top-r"><button data-dead="search">${ic('search')}</button><button data-dead="bell">${ic('bell')}</button><div class="av">나</div></div></div>`;
+const topbar=t=>`<div class="top"><div class="brand">${t}</div><div class="top-r"><div class="av">나</div></div></div>`;
 const opin=o=>o.up===6?'AI 분석가 6명 모두 ‘오른다’':o.down===6?'AI 분석가 6명 모두 ‘내린다’':`AI 분석가 6명 중 ${o.up}명 ‘오른다’`;
 const clean=t=>String(t).replace(/\s*[(\[](?:kr_[a-z_]+|price_info|universe_snapshot)[^)\]]*[)\]]/g,'').replace(/\s+([.,])/g,'$1').trim();
 const evOf=d=>d.items.map((x,i)=>Object.assign({kind:'item',i},x,{text:clean(x.text)})).concat(d.others.map((x,i)=>Object.assign({kind:'other',i},x,{text:clean(x.text)})));
@@ -98,15 +98,15 @@ const opened=(s,k)=>CASE(s).expand.includes(k);
 function chart(card){ const X=v=>((v+4)/8*310+20).toFixed(1);
   return `<svg viewBox="0 0 350 ${card.bars.length*56+26}" style="display:block;width:100%;margin-top:12px"><line x1="${X(0)}" y1="0" x2="${X(0)}" y2="${card.bars.length*56}" stroke="#111" stroke-width="1"/>
    ${card.bars.map((b,i)=>{const y=i*56; return `<text x="20" y="${y+16}" font-size="13" fill="#3D3D3D">${esc(b.label)}</text><line x1="${X(b.lo)}" y1="${y+34}" x2="${X(b.hi)}" y2="${y+34}" stroke="#111" stroke-width="3" stroke-linecap="round"/><circle cx="${X(b.v)}" cy="${y+34}" r="6" fill="#111"/>
-    <text x="330" y="${y+16}" font-size="13" font-weight="700" fill="#111" text-anchor="end">${b.v>0?'+':''}${b.v.toFixed(2)}</text>`;}).join('')}
+    <text x="330" y="${y+16}" font-size="13" font-weight="700" fill="#111" text-anchor="end">${b.v>0?'+':''}${b.v.toFixed(2)}%p</text>`;}).join('')}
    ${[-4,-2,0,2,4].map(v=>`<text x="${X(v)}" y="${card.bars.length*56+18}" font-size="11" fill="#6B6F76" text-anchor="middle">${v>0?'+':''}${v}</text>`).join('')}</svg>`; }
 
 const V={
 start:()=>{ const t=mode==='BA'?['약 10분 걸려요','브리핑 하나를 보고, 검토 요청 하나에 의견을 남겨요']:mode==='A'?['약 5분 걸려요','검토 요청 하나를 보고 의견을 남겨요']:['약 5분 걸려요','브리핑 하나를 보고 짧게 답해요'];
  return note()+`<div class="back"><button data-act="home">‹ 처음 화면</button><span></span></div><div class="top"><div class="brand">모닝브리프</div><div></div></div>
  <div class="h1">${mode==='A'?'검토 요청 하나에<br>의견을 남겨 주세요':'AI 투자 브리핑을<br>써 보고 의견을 주세요'}</div>
- <div class="lead">여러 AI 가 함께 만든 투자 리서치를 사람들이 어떻게 쓰는지 알아보는 연구예요. 맞고 틀린 답은 없어요.</div>
- <div class="panel">${[['clock',t[0],t[1]],['cal','과거 자료예요','과거 어느 하루의 기록이에요. 투자 조언이 아니에요.'],['pen','고른 답과 본 과정을 기록해요','고른 답, 적은 말, 펼쳐 본 내용, 본 시간'],['lock','참가 번호로만 기록해요','이름은 입력하지 않아요.'],['doc','수업 프로젝트 보고서와 발표에 써요','여러 사람의 의견을 모아 싣고, 인용은 번호로 해요.'],(SUBMIT?['share','제출하면 연구용 구글 시트에 저장돼요','연구 담당자만 볼 수 있어요.']:['share','결과는 1:1로 보내요','링크를 보내 준 연구 담당자 한 사람만 받아요.']),['exit','언제든 그만둘 수 있어요','보낸 뒤에도 번호를 알려 주면 지워요.']].map(([i,a,b])=>`<div class="li"><div class="dot">${ic(i)}</div><div class="tx"><div class="nm">${a}</div><div class="sm2">${b}</div></div></div>`).join('')}</div>
+ <div class="lead">AI 투자 브리핑을 사람들이 어떻게 쓰는지 알아보는 연구예요. 맞고 틀린 답은 없어요.</div>
+ <div class="panel">${[['clock',t[0],t[1]],['cal','과거 자료예요. 투자 조언이 아니에요',''],['pen','답과 본 과정을 참가 번호로 기록해요','이름은 입력하지 않아요'],(SUBMIT?['share','제출하면 연구용 구글 시트에 저장돼요','연구 담당자만 보고, 수업 프로젝트 보고서·발표에만 써요']:['share','결과는 1:1로 보내요','연구 담당자 한 사람만 받고, 수업 프로젝트 보고서·발표에만 써요']),['exit','언제든 그만둘 수 있어요','보낸 뒤에도 번호를 알려 주면 지워요']].map(([i,a,b])=>`<div class="li"><div class="dot">${ic(i)}</div><div class="tx"><div class="nm">${a}</div>${b?`<div class="sm2">${b}</div>`:''}</div></div>`).join('')}</div>
  <button class="chk" data-act="consent"><span class="box ${st.consent?'on':''}">${ic('check')}</span>안내를 읽고 참여에 동의해요</button>`+sticky('동의하고 시작하기','next',!st.consent); },
 profile:()=>{ if(sub&&sub.v==='inel') return note()+`<div class="center"><div class="h1" style="margin-top:72px">참여 조건을 확인해 주세요</div><div class="lead">이번 평가는 금융회사에서 투자, 리서치, 심사, 상품기획 관련 업무를 현재 하고 있거나 1년 이상 한 분, 또는 주식을 직접 거래해 본 분을 대상으로 해요. 시간을 내 주셔서 감사합니다.</div></div>
   <button class="link" data-act="uninel"><span>응답 다시 확인하기</span><span class="chev">›</span></button>`;
@@ -118,7 +118,7 @@ profile:()=>{ if(sub&&sub.v==='inel') return note()+`<div class="center"><div cl
  +sticky(mode==='A'?'검토 요청 보기':'브리핑 보기','pnext',!(st.profile.fin&&st.profile.exp)); },
 brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d),linked=s.cond==='linked';
  if(sub&&sub.v==='sources') return note(d)+`<div class="back"><button data-act="closesub">‹ ${sub.ev!=null?'판단 근거':'브리핑'}</button><span></span></div>
-  <div class="title">AI가 본 자료 <span class="code">${esc(d.name)}</span></div><div class="sub">${d.sources.map(y=>esc(y.label)).join('·')} 자료 ${d.sources.length}건이에요. AI 는 뉴스·리서치 같은 다른 자료도 봤고, 그 자료는 여기에 없어요.</div>
+  <div class="title">AI가 본 자료 <span class="code">${esc(d.name)}</span></div><div class="sub">AI 가 본 자료 가운데 뉴스·리서치는 여기에 없어요.</div>
   <div class="panel" style="margin-top:16px">${d.sources.map(y=>`<button class="li" data-act="source" data-sid="${esc(y.id)}" data-from="list"><div class="dot">${ic(SRCIC[y.id]||'doc')}</div><div class="tx"><div class="nm">${esc(y.label)} <span class="code">${esc(y.date)}</span></div><div class="sm1">${esc(y.lines[0])}</div></div><span class="chev">›</span></button>`).join('')}</div>`+sticky('돌아가기','closesub');
  if(sub&&sub.v==='source'){ const y=d.sources.find(z=>z.id===sub.sid),x=sub.ev!=null?E[sub.ev]:null,hl=linked&&x&&x.kind==='item'&&y.id===x.link.source?x.link.lines:[];
   return note(d)+`<div class="back"><button data-act="${sub.from==='list'?'sources':'closesub'}">‹ ${sub.from==='list'?'자료 목록':'판단 근거'}</button><span></span></div>
@@ -131,18 +131,18 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
     <button class="link" data-act="source" data-sid="${esc(src.id)}" data-from="link"><span>이 자료 전체 보기</span><span class="chev">›</span></button>`:''}
    <button class="link" data-act="sources"><span>AI가 본 자료 목록 · ${d.sources.length}건</span><span class="chev">›</span></button></div>`+sticky('브리핑으로 돌아가기','closesub'); }
  const top1=p.target.find(x=>x.code===d.code)||p.target[0], more=p.target.length-1, evOpen=opened(s,'ev'), wOpen=opened(s,'weights'), all=opened(s,'all');
- return note(d)+(st.ret!=null?`<div class="back"><button data-act="ret">‹ 질문으로 돌아가기</button><span>다시 보는 중</span></div>`:`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`)+topbar('투자 브리핑')+`<div style="margin:4px 0 16px"><div style="font-size:14px;font-weight:600;color:var(--mute)">판단일 아침 8시 · 장 시작 전</div><div style="font-size:24px;font-weight:700;color:var(--ink);line-height:1.4;margin-top:6px">AI 분석가 6명이 전날까지의 자료로<br>오늘 담을 비중을 정했어요</div><div style="font-size:16px;color:var(--body);line-height:1.6;margin-top:10px">${esc(d.name)}는 6명 가운데 ${o.up}명이 ‘오른다’고 봤어요. 성과가 좋았던 분석가에게 가중치를 더 주고 합쳤더니 ${esc(d.name)} 비중이 ${pc((p.target.find(x=>x.code===d.code)||p.target[0]).w)}${p.cash>0.005?`, 현금이 ${pc(p.cash)}`:''}가 됐어요. 아래에서 분석가마다 어떻게 판단했는지 볼 수 있어요.</div></div>
- <div class="card"><div class="k">모의 포트폴리오 · 오늘 담을 비중</div><div class="big">${esc(top1.name)} 비중 ${pc(top1.w)}</div><div class="s">현금 비중 ${pc(p.cash)} · AI 분석가 6명의 판단을 가중치로 합친 모의 비중이에요</div>
+ return note(d)+back('참여 안내',st.ret!=null?'다시 보는 중':'')+topbar('투자 브리핑')+`<div style="margin:4px 0 16px"><div style="font-size:14px;font-weight:600;color:var(--mute)">판단일 아침 8시 · 장 시작 전</div><div style="font-size:24px;font-weight:700;color:var(--ink);line-height:1.4;margin-top:6px">AI 분석가 6명이 전날까지의 자료로<br>오늘 담을 비중을 정했어요</div></div>
+ <div class="card"><div class="k">모의 포트폴리오 · 오늘 담을 비중</div><div class="big">${esc(top1.name)} 비중 ${pc(top1.w)}</div>
   <div class="hold">${[...p.target].sort((a,b)=>(b.code===d.code)-(a.code===d.code)).map(t=>`<div class="hrow"><span>${esc(t.name)}</span><b>${pc(t.w)}</b></div>`).join('')}${p.cash>0.005?`<div class="hrow"><span>현금</span><b>${pc(p.cash)}</b></div>`:''}</div></div>
  <h2>${esc(d.name)}</h2>
- <div class="panel pad"><div class="meta" style="font-weight:600">이미 일어난 일 · 전날 종가</div><div class="row2"><div><div class="price" style="margin-top:4px">${won(m.close)}</div><div class="chg">전날 하루 등락률 <span class="${m.pct>=0?'up':'down'}">${m.pct>=0?'+':''}${m.pct.toFixed(2)}%</span> <span class="meta">(${m.chg>=0?'+':''}${Math.round(m.chg).toLocaleString('ko-KR')}원)</span></div></div></div></div>
- <div class="panel pad" style="margin-top:12px"><div class="meta" style="font-weight:600">AI 의 전망 · 판단일(오늘) 이후</div><div class="h3" style="margin-top:6px">${opin(o)}</div><div class="bar">${Array.from({length:6},(_,i)=>`<i class="${i<o.up?'':'off'}"></i>`).join('')}</div>
-  <div class="meta">오른다 ${o.up}명 · 내린다 ${o.down}명${o.none?` · 의견 없음 ${o.none}명`:''} · 다음 거래일에 오를지에 대한 전망이에요</div>${d.marketFlags.map(f=>{ const g=String(f); if(g.startsWith('의견 차이')) return `분석가 사이에 의견이 갈렸어요(오른다 ${o.up}명 · 내린다 ${o.down}명)`; const v=g.match(/거래량 ([\d.]+)배/); return v?`전날 거래량이 평소의 ${v[1]}배였어요`:esc(g); }).map(x=>`<div class="meta" style="margin-top:6px">눈여겨볼 점 · ${x}</div>`).join('')}</div>
- <div class="panel" style="margin-top:12px"><div style="padding:16px 0 4px"><div style="font-size:17px;font-weight:700;color:var(--ink)">AI 분석가 6명의 판단</div><div class="meta" style="margin-top:4px">눌러서 분석가마다 근거를 볼 수 있어요</div></div>
+ <div class="panel pad"><div class="meta" style="font-weight:600">전날 종가</div><div class="row2"><div><div class="price" style="margin-top:4px">${won(m.close)}</div><div class="chg">전날 하루 등락률 <span class="${m.pct>=0?'up':'down'}">${m.pct>=0?'+':''}${m.pct.toFixed(2)}%</span> <span class="meta">(${m.chg>=0?'+':''}${Math.round(m.chg).toLocaleString('ko-KR')}원)</span></div></div></div></div>
+ <div class="panel pad" style="margin-top:12px"><div class="meta" style="font-weight:600">AI 의 전망 · 다음 거래일</div><div class="h3" style="margin-top:6px">${opin(o)}</div><div class="bar">${Array.from({length:6},(_,i)=>`<i class="${i<o.up?'':'off'}"></i>`).join('')}</div>
+  ${d.marketFlags.map(f=>{ const g=String(f); if(g.startsWith('의견 차이')) return ''; const v=g.match(/거래량 ([\d.]+)배/); return v?`전날 거래량이 평소의 ${v[1]}배였어요`:esc(g); }).filter(Boolean).map(x=>`<div class="meta" style="margin-top:6px">눈여겨볼 점 · ${x}</div>`).join('')}</div>
+ <div class="panel" style="margin-top:12px"><div style="padding:16px 0 4px"><div style="font-size:17px;font-weight:700;color:var(--ink)">AI 분석가 6명의 판단</div></div>
   <button class="fold2" data-act="expand" data-k="help" style="border-top:0;padding:8px 0 14px"><span style="font-size:14px;font-weight:600;color:var(--body)">이 화면 읽는 법</span><span class="chev">${opened(s,'help')?'⌃':'⌄'}</span></button>
   ${opened(s,'help')?`<div class="meta" style="padding:0 0 14px;line-height:1.7">· <b>분석가</b>: 같은 날 자료를 보고 따로 판단한 AI 여섯이에요.<br>· <b>상승 확률</b>: 그 분석가가 본, 이 종목이 다음 거래일에 오를 가능성이에요. 50%보다 높으면 ‘오른다’로 적었어요.<br>· <b>추천</b>: 분석가가 오늘 사자고 고른 종목이에요. 확신이 없으면 추천을 내지 않아요.<br>· <b>가중치</b>: 여섯 의견을 합칠 때 그 분석가의 말을 얼마나 크게 반영하는지예요. 최근 성과가 좋았던 분석가일수록 커요.<br>· <b>비중</b>: 가진 돈 가운데 그 종목에 넣는 몫이에요. 추천을 내지 않은 분석가의 몫은 현금으로 남아요.</div>`:''}
   ${(AG[d.id]||[]).map(g=>{ const mine=E.map((x,k)=>[x,k]).filter(([x])=>x.agent===g.agent), w=(p.agents.find(a=>a.agent===g.agent)||{}).w||0, op=opened(s,'a'+g.agent), hid=Math.max(0,g.evTotal-mine.length);
-   const head=g.rec?`${esc(d.name)} 추천${g.nrec>1?` · 추천한 종목 ${g.nrec}개`:''}`:(g.nrec?`${esc(d.name)}는 추천 안 함`:`추천 없음${g.abstain==='conflicting_signals'?'(신호가 엇갈린다고 봄)':''}`);
+   const head=g.rec?`${esc(d.name)} 추천`:(g.nrec?`${esc(d.name)}${eun(d.name)} 추천 안 함`:`추천 없음${g.abstain==='conflicting_signals'?'(신호가 엇갈린다고 봄)':''}`);
    return `<button class="fold2" data-act="expand" data-k="a${g.agent}" style="flex-wrap:wrap"><span style="display:flex;flex-direction:column;gap:2px;text-align:left"><span>분석가 ${g.agent} · ${g.up!=null&&g.up>50?'오른다':'내린다'} <span class="meta" style="font-weight:600">상승 확률 ${g.up}%</span></span><span class="meta" style="font-weight:500">가중치 ${pc(w)} · ${head}</span></span><span class="chev">${op?'⌃':'⌄'}</span></button>`
     +(op?((g.record?`<div class="src" style="margin:0 0 12px"><span class="tag">최근 ${g.record.days}거래일 기록 · 판단일 전에 확정된 것</span><div class="kv"><span>추천한 날</span><span>${g.record.rec}일</span></div><div class="kv"><span>그중 추천 종목이 다음 날 올랐던 날</span><span>${g.record.plus}일</span></div><div class="kv"><span>추천을 내지 않은 날</span><span>${g.record.none}일</span></div><div class="meta" style="margin-top:6px">추천 종목들의 다음 거래일 평균 수익이 플러스였던 날을 셌어요. 가중치는 이 횟수만으로 정해지지 않아요.</div></div>`:'')+mine.map(([x,k])=>`<button class="li" data-act="ev" data-ev="${k}"><div class="tx"><div class="two-l">${esc(x.text)}</div><div class="meta cut">${linked&&x.kind==='item'?'<b class="lk">자료 바로 보기</b> · ':''}${esc(x.srcLabel)} 자료</div></div><span class="chev">›</span></button>`).join('')
       +(g.rec&&hid?`<div class="meta" style="padding:4px 0 14px">이 밖에 뉴스·리서치·컨센서스 자료를 쓴 근거 ${hid}개는 이 화면에 싣지 않았어요.</div>`:'')
@@ -158,19 +158,20 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
 bq:()=>{ const d=S.days[S.sets['1'][0]],w=pc(d.portfolio.target.find(x=>x.code===d.code).w),fill=x=>String(x).split('{name}').join(d.name).split('{w}').join(w);
  const qs=C.B.questions.map(q=>Object.assign({},q,{q:fill(q.q),options:q.options&&q.options.map(([k,l])=>[k,fill(l)])}));
  return note()+`<div class="back"><button data-act="revisit" data-b="0">‹ 브리핑 다시 보기</button><span></span></div><div class="h1">브리핑을 받았다고 생각해 보세요</div>${qs.map(q=>qHtml(q,'b').replace('</div><div class="opts',q.lead?`</div><div class="meta" style="margin-top:4px">${esc(fill(q.lead))}</div><div class="opts`:'</div><div class="opts')).join('')}`+(mode==='B'?`<h2>투자 경험</h2>${C.B.background.map(q=>qHtml(q,'bbg')).join('')}`:'')+sticky(mode==='BA'?'다음으로':'마치기','next',!(allDone(C.B.questions,'b')&&(mode!=='B'||allDone(C.B.background,'bbg')))); },
-review:()=>{ const A=C.A;
+/* 11/24 밤 Daisy: 검토 요청과 검토 의견을 한 화면으로 — 결과 한 문장 + 작은 그래프는 보이고, 세부는 '비교 결과 자세히 보기' 안, 그 아래 A1·A2·(A3) */
+review:()=>{ const A=C.A,qs=[A.q1,A.q2,A.q3];
  return note()+`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`+topbar('검토 요청')+`<div class="card"><div class="k">${esc(A.request.label)}</div><div class="big" style="font-size:24px">${esc(A.request.title)}</div><div class="s">${esc(A.request.sub)}</div></div>
- <h2>검증 결과</h2><div class="panel pad"><div class="h3">${esc(A.card.title)}</div><div class="meta">${esc(A.headline)}</div>${chart(A.card)}<div class="meta" style="margin-top:8px">${esc(A.card.scope)}</div>
-  <button class="fold" data-act="amore"><span>비교 자료 더 보기</span><span>${st.A.more?'⌃':'⌄'}</span></button>
-  ${st.A.more?A.more.map(m=>`<div class="oth" data-m="${m.id}"><div class="one2">${esc(m.t)}</div><div class="meta mwhy">${esc(m.why)}</div>${m.rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join(''):''}</div>`
- +sticky('검토 의견 남기기','next'); },
-aq:()=>{ const A=C.A,qs=[A.q1,A.q2,A.q3]; return note()+back('검토 요청 다시 보기','')+`<div class="h1">검토 의견</div>${qs.map(q=>qHtml(q,'a')).join('')}
- <h2>하시는 일</h2>${A.background.map(q=>qHtml(Object.assign({},q,{grid:true}),'bg')).join('')}`+sticky('마치기','next',!(allDone(qs,'a')&&allDone(A.background,'bg'))); },
+ <h2>비교 결과</h2><div class="panel pad"><div class="h3">${esc(A.summary)}</div>${chart(A.card)}<div class="meta" style="margin-top:8px">${esc(A.legend)}</div>
+  <button class="fold" data-act="amore"><span>비교 결과 자세히 보기</span><span>${st.A.more?'⌃':'⌄'}</span></button>
+  ${st.A.more?`<div class="meta" style="margin-top:4px">${esc(A.card.scope)}</div><div class="meta" style="margin-top:6px">${esc(A.card.note)}</div>`+A.more.map(m=>`<div class="oth" data-m="${m.id}"><div class="one2">${esc(m.t)}</div><div class="meta mwhy">${esc(m.why)}</div>${m.rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join(''):''}</div>
+ <h2>검토 의견</h2>${qs.map(q=>qHtml(q,'a')).join('')}`
+ +sticky('다음으로','next',!allDone(qs,'a')); },
+aq:()=>{ const A=C.A; return note()+back('검토 요청 다시 보기','')+`<div class="h1">하시는 일</div>${A.background.map(q=>qHtml(Object.assign({},q,{grid:true}),'bg')).join('')}`+sticky('마치기','next',!allDone(A.background,'bg')); },
 end:()=>{ const lead=!SUBMIT?'결과 파일을 공유하거나 복사한 글을 붙여 넣어, 링크를 보내 준 연구 담당자에게 카카오톡 1:1로 보내 주세요.'
   :st.sentRemote?'제출됐어요. 이제 창을 닫아도 돼요. 고맙습니다.':st.sendFail?'제출이 되지 않았어요. 다시 눌러 보고, 그래도 안 되면 아래 ‘결과 텍스트 복사하기’로 복사해 연구 담당자에게 1:1로 보내 주세요.':'아래 버튼을 누르면 결과가 연구 담당자에게 제출돼요.';
  return note()+(st.sentRemote?'':`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`)+`<div class="center"><div class="done" style="margin-top:${st.sentRemote?72:24}px">${ic('check')}</div><div class="h1">${SUBMIT&&st.sentRemote?'제출을 마쳤어요':'모두 마쳤어요'}</div><div class="lead">${lead}</div></div>
  <div class="panel" style="margin-top:8px"><div class="kv"><span>참여한 것</span><span>${mode==='BA'?'브리핑 · 검토 요청':mode==='A'?'검토 요청':'브리핑'}</span></div><div class="kv"><span>참가 번호</span><span>${esc(code)}</span></div></div>
- ${mode.includes('A')&&(st.sentRemote||!SUBMIT&&st.fin)?`<div class="panel" style="margin-top:12px"><button class="fold2" data-act="team"><span>연구팀의 판단 보기</span><span class="chev">${st.teamOpen?'⌃':'⌄'}</span></button>${st.teamOpen?`<div class="sm2" style="padding-bottom:16px">${esc(C.A.team)}</div>`:''}</div>`:''}
+ ${mode.includes('A')&&(st.sentRemote||!SUBMIT&&st.fin)?`<div class="panel" style="margin-top:12px"><button class="fold2" data-act="team"><span>연구팀의 판단 보기</span><span class="chev">${st.teamOpen?'⌃':'⌄'}</span></button>${st.teamOpen?`<div class="sm2" style="padding-bottom:16px;white-space:pre-line">${esc(C.A.team)}</div>`:''}</div>`:''}
  <button class="link" data-act="copy"><span>결과 텍스트 복사하기</span><span class="chev">›</span></button>`+(SUBMIT?sticky(st.sentRemote?'제출 완료':(sending?'제출하는 중…':'결과 제출하기'),'submitRemote',st.sentRemote||sending):sticky('결과 파일 공유하기','send')); }
 };
 function render(){ const s=step(); $.innerHTML=V[s.t](s); window.scrollTo(0,0); }
@@ -191,7 +192,7 @@ $.addEventListener('click',e=>{ const dead=e.target.closest('[data-dead]'); if(d
  if(act==='pnext'){ if(st.profile.fin==='n'&&st.profile.exp==='none'){ sub={v:'inel'}; log('ineligible'); return render(); } return go(1); }
  if(act==='uninel'){ sub=null; return render(); }
  if(act==='opt'){ const store=storeOf(b.dataset.store); store[b.dataset.q]=b.dataset.v; if(b.dataset.q==='A1'&&b.dataset.v!=='check'){ delete st.A.answers.A3; delete st.A.answers.A3_text; } log('pick',{q:b.dataset.q,v:b.dataset.v}); return keep(); }
- if(act==='expand'){ const c=CASE(s),k=b.dataset.k; c.expand=c.expand.includes(k)?c.expand.filter(x=>x!==k):[...c.expand,k]; log('expand',{day:s.day,k,open:c.expand.includes(k)}); return keep(); }
+ if(act==='expand'){ const c=CASE(s),k=b.dataset.k; c.expand=c.expand.includes(k)?c.expand.filter(x=>x!==k):[...c.expand,k]; if(c.expand.includes(k)){ c.expandEver=c.expandEver||[]; if(!c.expandEver.includes(k)) c.expandEver.push(k); } log('expand',{day:s.day,k,open:c.expand.includes(k)}); return keep(); }
  if(act==='amore'){ st.A.more=!st.A.more; if(st.A.more) st.A.moreSeen=true; log('amore',{open:st.A.more}); return keep(); }
  if(act==='team'){ st.teamOpen=!st.teamOpen; log('team',{open:st.teamOpen}); return keep(); }
  if(act==='none'){ const store=storeOf(b.dataset.store),q=b.dataset.q; store[q+'_none']=!store[q+'_none']; if(store[q+'_none']) store[q]=''; log('pick',{q,v:'none:'+store[q+'_none']}); return keep(); }
@@ -207,7 +208,7 @@ $.addEventListener('click',e=>{ const dead=e.target.closest('[data-dead]'); if(d
 /* ── 결과 ── */
 function result(full){ const dev={w:innerWidth,h:innerHeight,touch:navigator.maxTouchPoints>0,mobile:/Mobi|Android/i.test(navigator.userAgent)};
  const r={v:2,study:C.version,code,order,mode,sample:!!S.meta.sample,built:S.meta.built,started:st.t0,finished:st.fin||Date.now(),dev,profile:st.profile,dead:st.dead};
- if(mode.includes('B')) r.B={cases:Object.values(st.B.cases).sort((a,b)=>a.b-b.b).map(c=>({id:c.id,cond:c.cond,b:c.b,ms:Math.round(c.ms),hid:Math.round(c.hid),opened:c.opened,evOpened:c.evOpened,expand:c.expand,revisits:c.revisits||0})),answers:st.B.answers,bg:st.B.bg||{}};
+ if(mode.includes('B')) r.B={cases:Object.values(st.B.cases).sort((a,b)=>a.b-b.b).map(c=>({id:c.id,cond:c.cond,b:c.b,ms:Math.round(c.ms),hid:Math.round(c.hid),opened:c.opened,evOpened:c.evOpened,expand:c.expand,expandEver:c.expandEver||[],revisits:c.revisits||0})),answers:st.B.answers,bg:st.B.bg||{}};
  if(mode.includes('A')) r.A={answers:st.A.answers,bg:st.A.bg,more:!!(st.A.moreSeen||st.A.more),team:!!st.teamOpen};
  if(full) r.events=st.events; return r; }
 const b64=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
