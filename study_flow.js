@@ -1,7 +1,7 @@
 'use strict';
 /* 사용자 평가(2026-11-24 계획) — 한 링크로 끝까지. 참가 번호가 흐름을 정한다(참가자가 고르지 않는다).
    개인 투자자 G: 안내·동의 → 브리핑 하나(자유롭게 봄) → 세 문항 → 제출
-   종사자 E: 안내·동의 → 브리핑 하나 → 세 문항 → 검토 요청 → 검토 의견 → 제출 (only=a 면 브리핑 없이 검토만)
+   종사자 E: 안내·동의 → 브리핑 하나 → 세 문항 → 검토 요청 → 검토 의견 → 제출 (모두 같은 흐름)
    답을 맞고 틀림으로 채점하지 않는다. 결론을 먼저 보이고, 근거·세부는 펼쳐서 본다. 화면 규칙은 index.html 의 디자인 규칙 그대로. */
 const S=window.STIMULI,C=window.STUDY,$=document.getElementById('app'),Q=new URLSearchParams(location.search);
 /* 결과 자동 제출 주소(구글 Apps Script 웹 앱의 /exec). 비어 있으면 파일 공유·복사로 받는다. 로컬 시험 때만 ?submit= 로 바꿀 수 있다 */
@@ -25,9 +25,11 @@ const SRCIC={price:'flow',flows:'flow',indicators:'flow'};
 /* ── 참가 번호와 흐름 ── */
 const code=(Q.get('p')||'').toUpperCase(), valid=/^[EG]\d\d$/.test(code)&&+code.slice(1)>=1;
 /* 배정표(S.assign)에 있는 번호는 그 순서, 공통 링크로 받은 그 뒤 번호는 순서 1~4 를 번호 순으로 돌아가며 */
-const mode=code[0]==='G'?'B':(Q.get('only')==='a'?'A':'BA'), order=valid?(S.assign[code]||((+code.slice(1)-1)%4)+1):1;
+/* 11/24 밤 Daisy: 종사자는 모두 10분판(브리핑 + 검토 요청) — only=a 는 받지 않는다 */
+const mode=code[0]==='G'?'B':'BA', order=valid?(S.assign[code]||((+code.slice(1)-1)%4)+1):1;
 const ORD={1:[['1','linked'],['2','plain']],2:[['1','plain'],['2','linked']],3:[['2','linked'],['1','plain']],4:[['2','plain'],['1','linked']]};
-const steps=[{t:'start'},{t:'profile'}];
+/* 11/24 밤: '시작 전' 두 질문은 뺀다 — 공통 링크 첫 화면에서 종사자·개인 투자자를 이미 고른다(번호의 E·G) */
+const steps=[{t:'start'}];
 /* 11/24 밤: 브리핑은 하나(5월 14일 LG전자, 출처가 이어진 버전) — 두 버전 비교는 하지 않는다 */
 if(mode.includes('B')){ steps.push({t:'brief',day:S.sets['1'][0],cond:'linked',b:0},{t:'bq'}); }
 if(mode.includes('A')) steps.push({t:'review'},{t:'aq'});
@@ -35,7 +37,7 @@ steps.push({t:'end'});
 
 /* ── 상태와 기록 ── */
 const KEY='mb5_'+code+'_'+mode;
-let st={v:2,idx:0,t0:Date.now(),consent:false,profile:{},B:{cases:{},answers:{}},A:{answers:{},bg:{},cards:[],more:false},events:[],dead:0};
+let st={v:2,idx:0,t0:Date.now(),consent:false,profile:{group:code[0]},B:{cases:{},answers:{}},A:{answers:{},bg:{},cards:[],more:false},events:[],dead:0};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.v===2&&s.B&&s.B.answers&&s.A&&s.A.cards&&!Q.get('reset')) st=s;}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}};
 const log=(type,d)=>{st.events.push(Object.assign({t:Date.now()-st.t0,type},d||{})); save();};
@@ -76,7 +78,8 @@ const sticky=(label,act,dis)=>`<div class="sticky"><button class="cap pri" data-
 const back=(label,right)=>`<div class="back"><button data-act="back">‹ ${label||'이전'}</button><span>${right||''}</span></div>`;
 const topbar=t=>`<div class="top"><div class="brand">${t}</div><div class="top-r"><button data-dead="search">${ic('search')}</button><button data-dead="bell">${ic('bell')}</button><div class="av">나</div></div></div>`;
 const opin=o=>o.up===6?'AI 분석가 6명 모두 ‘오른다’':o.down===6?'AI 분석가 6명 모두 ‘내린다’':`AI 분석가 6명 중 ${o.up}명 ‘오른다’`;
-const evOf=d=>d.items.map((x,i)=>Object.assign({kind:'item',i},x)).concat(d.others.map((x,i)=>Object.assign({kind:'other',i},x)));
+const clean=t=>String(t).replace(/\s*[(\[](?:kr_[a-z_]+|price_info|universe_snapshot)[^)\]]*[)\]]/g,'').replace(/\s+([.,])/g,'$1').trim();
+const evOf=d=>d.items.map((x,i)=>Object.assign({kind:'item',i},x,{text:clean(x.text)})).concat(d.others.map((x,i)=>Object.assign({kind:'other',i},x,{text:clean(x.text)})));
 const wrow=(name,w,me,off)=>`<div class="wrow"><span class="wn ${me?'me':''}">${esc(name)}</span><span class="wbar"><i class="${off?'off':''}" style="width:${Math.round(w*100)}%"></i></span><span class="wv">${pc(w)}</span></div>`;
 const opened=(s,k)=>CASE(s).expand.includes(k);
 function chart(card){ const X=v=>((v+4)/8*310+20).toFixed(1);

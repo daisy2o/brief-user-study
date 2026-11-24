@@ -191,15 +191,14 @@ const go=(c,only)=>{ const q=new URLSearchParams({p:c}); if(only) q.set('only','
 try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.code&&!Q.get('reset')) { go(s.code,s.only); } }catch(e){}
 const opt=(k,v,label,sub)=>`<button class="cap sec ${ (k==='g'?g:len)===v?'sel':''}" data-k="${k}" data-v="${v}" style="height:auto;min-height:56px;flex-direction:column;white-space:normal;padding:10px 12px;line-height:1.35">${label}${sub?`<small style="font-weight:500;font-size:12px;opacity:.75">${sub}</small>`:''}</button>`;
 function render(){
-  const ready=g==='G'||(g==='E'&&len);
+  const ready=g==='G'||g==='E';
   $.innerHTML=(TEST?`<div class="note" style="color:#B42318;font-weight:700">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>`:'')+
   `<div class="note">연구용 화면 · 투자 조언 아님</div>
   <div class="h1" style="margin-top:24px">AI 투자 브리핑 연구에<br>참여해 주셔서 고마워요</div>
   <div class="lead">해당하는 쪽을 골라 주세요. 고른 데 따라 보는 내용과 걸리는 시간이 달라요.</div>
   <div class="panel pad" style="margin-top:12px"><div class="q" style="margin-bottom:12px">어떤 분이세요?</div>
    <div class="two">${opt('g','E','금융회사에서 일해요','투자·리서치·심사·상품기획, 지금 또는 1년 이상')}${opt('g','G','주식을 직접 투자해요','금융회사 경험은 없어요')}</div></div>`+
-  (g==='E'?`<div class="panel pad" style="margin-top:12px"><div class="q" style="margin-bottom:12px">시간이 얼마나 되세요?</div>
-   <div class="two">${opt('len','BA','약 10분','브리핑 하나 + 검토 요청')}${opt('len','A','약 5분','검토 요청만')}</div></div>`:'')+
+  (g?`<div class="lead" style="margin-top:12px">${g==='E'?'약 10분 걸려요 · 브리핑 하나를 보고, 검토 요청 하나에 의견을 남겨요':'약 5분 걸려요 · 브리핑 하나를 보고 짧게 답해요'}</div>`:'')+
   (err?`<div class="lead" style="color:#B42318;margin-top:12px">${err}</div>`:'')+
   `<div class="sticky"><button class="cap pri" data-act="start" ${ready&&!busy?'':'disabled'}>${busy?'준비하는 중…':'시작하기'}</button></div>`;
 }
@@ -209,7 +208,7 @@ $.addEventListener('click',async e=>{ const b=e.target.closest('button'); if(!b|
   if(b.dataset.act==='start'){ busy=true; err=''; render();
     try{ const r=await fetch(SUBMIT_URL+'?claim='+g+(TEST?'&test=1':'')); const j=await r.json();
       if(!j||!j.ok||!j.code) throw new Error((j&&j.error)||'bad');
-      const only=g==='E'&&len==='A'; try{localStorage.setItem(KEY,JSON.stringify({code:j.code,only}));}catch(e){}
+      const only=false; try{localStorage.setItem(KEY,JSON.stringify({code:j.code,only}));}catch(e){}
       go(j.code,only); }
     catch(x){ busy=false; err='연결이 잠시 안 돼요. 다시 눌러 주세요.'; render(); } } });
 render();
