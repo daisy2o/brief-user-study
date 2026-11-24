@@ -50,8 +50,8 @@ steps.push({t:'end'});
 
 /* ── 상태와 기록 ── */
 const KEY='mb5_'+code+'_'+mode;
-let st={v:2,idx:0,t0:Date.now(),consent:false,profile:{group:code[0]},B:{cases:{},answers:{}},A:{answers:{},bg:{},cards:[],more:false},events:[],dead:0};
-try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.v===2&&s.B&&s.B.answers&&s.A&&s.A.cards&&!Q.get('reset')) st=s;}catch(e){}
+let st={v:2,idx:0,t0:Date.now(),consent:false,profile:{group:code[0]},B:{cases:{},answers:{}},A:{answers:{},bg:{},more:false,moreSeen:false},events:[],dead:0};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.v===2&&s.B&&s.B.answers&&s.A&&s.A.answers&&!Q.get('reset')) st=s;}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}};
 const log=(type,d)=>{st.events.push(Object.assign({t:Date.now()-st.t0,type},d||{})); save();};
 let sub=null, shownAt=0, hidAt=0, toastT=null, sending=false;
@@ -158,17 +158,11 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
 bq:()=>{ const d=S.days[S.sets['1'][0]],w=pc(d.portfolio.target.find(x=>x.code===d.code).w),fill=x=>String(x).split('{name}').join(d.name).split('{w}').join(w);
  const qs=C.B.questions.map(q=>Object.assign({},q,{q:fill(q.q),options:q.options&&q.options.map(([k,l])=>[k,fill(l)])}));
  return note()+`<div class="back"><button data-act="revisit" data-b="0">‹ 브리핑 다시 보기</button><span></span></div><div class="h1">브리핑을 받았다고 생각해 보세요</div>${qs.map(q=>qHtml(q,'b').replace('</div><div class="opts',q.lead?`</div><div class="meta" style="margin-top:4px">${esc(fill(q.lead))}</div><div class="opts`:'</div><div class="opts')).join('')}`+(mode==='B'?`<h2>투자 경험</h2>${C.B.background.map(q=>qHtml(q,'bbg')).join('')}`:'')+sticky(mode==='BA'?'다음으로':'마치기','next',!(allDone(C.B.questions,'b')&&(mode!=='B'||allDone(C.B.background,'bbg')))); },
-review:()=>{ const A=C.A,items=Object.fromEntries(A.checklist.flatMap(g=>g.items).map(x=>[x.id,x])),diag=Object.fromEntries(A.diagnosis.map(d=>[d.id,d]));
- if(sub&&sub.v==='card'){ const k=A.cards.find(c=>c.id===sub.id);
-  return note()+`<div class="back"><button data-act="closesub">‹ 검토 요청</button><span>연구팀이 확인한 내용</span></div><div class="title">${esc(k.t)}</div><div class="sub">${esc(k.one)}</div>
-  <div class="panel" style="margin-top:16px">${(k.items||[]).map(id=>`<div class="oth"><div class="one2">${esc(items[id].t)}</div><div class="meta">확인할 것 · ${esc(items[id].q)}</div><div class="sm2" style="margin-top:4px">${esc(items[id].f)}</div></div>`).join('')}
-   ${(k.diag||[]).map(id=>`<div class="oth"><div class="one2">${esc(diag[id].q.replace(/^[①-④] /,''))}</div>${diag[id].rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join('')}</div>`+sticky('검토 요청으로 돌아가기','closesub'); }
+review:()=>{ const A=C.A;
  return note()+`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`+topbar('검토 요청')+`<div class="card"><div class="k">${esc(A.request.label)}</div><div class="big" style="font-size:24px">${esc(A.request.title)}</div><div class="s">${esc(A.request.sub)}</div></div>
- <div class="lead" style="margin:16px 0 0">아래 결과를 보고, 궁금한 것이 있으면 확인한 뒤, 맨 아래에서 검토 의견을 남겨 주세요.</div>
- <h2>핵심 결과</h2><div class="panel pad"><div class="h3">${esc(A.card.title)}</div><div class="meta">${esc(A.headline)}</div>${chart(A.card)}
-  <button class="fold" data-act="amore"><span>결과 자세히 보기</span><span>${st.A.more?'⌃':'⌄'}</span></button>
-  ${st.A.more?A.card.bars.map(b=>`<div class="kv"><span>${esc(b.label)} · 회차별</span><span>${esc(b.rounds)}</span></div>`).join('')+A.card.rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join(''):''}</div>
- <h2>결정 전에 궁금한 것</h2><div class="lead" style="margin:-4px 0 12px">검토하면서 확인하고 싶은 질문을 눌러 보세요. 연구팀이 확인한 내용이 나와요. 하나도 열지 않아도 괜찮아요.</div><div class="panel">${A.cards.map(k=>`<button class="li" data-act="card" data-id="${k.id}"><div class="tx"><div class="nm">${esc(k.t)}</div><div class="sm2">${esc(k.one)}</div></div>${st.A.cards.includes(k.id)?`<span class="ok">${ic('check')}</span>`:'<span class="chev">›</span>'}</button>`).join('')}</div>`
+ <h2>검증 결과</h2><div class="panel pad"><div class="h3">${esc(A.card.title)}</div><div class="meta">${esc(A.headline)}</div>${chart(A.card)}<div class="meta" style="margin-top:8px">${esc(A.card.scope)}</div>
+  <button class="fold" data-act="amore"><span>비교 자료 더 보기</span><span>${st.A.more?'⌃':'⌄'}</span></button>
+  ${st.A.more?A.more.map(m=>`<div class="oth" data-m="${m.id}"><div class="one2">${esc(m.t)}</div><div class="meta mwhy">${esc(m.why)}</div>${m.rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join(''):''}</div>`
  +sticky('검토 의견 남기기','next'); },
 aq:()=>{ const A=C.A,qs=[A.q1,A.q2,A.q3]; return note()+back('검토 요청 다시 보기','')+`<div class="h1">검토 의견</div>${qs.map(q=>qHtml(q,'a')).join('')}
  <h2>하시는 일</h2>${A.background.map(q=>qHtml(Object.assign({},q,{grid:true}),'bg')).join('')}`+sticky('마치기','next',!(allDone(qs,'a')&&allDone(A.background,'bg'))); },
@@ -198,8 +192,7 @@ $.addEventListener('click',e=>{ const dead=e.target.closest('[data-dead]'); if(d
  if(act==='uninel'){ sub=null; return render(); }
  if(act==='opt'){ const store=storeOf(b.dataset.store); store[b.dataset.q]=b.dataset.v; if(b.dataset.q==='A1'&&b.dataset.v!=='check'){ delete st.A.answers.A3; delete st.A.answers.A3_text; } log('pick',{q:b.dataset.q,v:b.dataset.v}); return keep(); }
  if(act==='expand'){ const c=CASE(s),k=b.dataset.k; c.expand=c.expand.includes(k)?c.expand.filter(x=>x!==k):[...c.expand,k]; log('expand',{day:s.day,k,open:c.expand.includes(k)}); return keep(); }
- if(act==='card'){ const id=b.dataset.id; if(!st.A.cards.includes(id)) st.A.cards.push(id); log('card',{id}); sub={v:'card',id,y:window.scrollY}; return render(); }
- if(act==='amore'){ st.A.more=!st.A.more; log('amore',{open:st.A.more}); return keep(); }
+ if(act==='amore'){ st.A.more=!st.A.more; if(st.A.more) st.A.moreSeen=true; log('amore',{open:st.A.more}); return keep(); }
  if(act==='team'){ st.teamOpen=!st.teamOpen; log('team',{open:st.teamOpen}); return keep(); }
  if(act==='none'){ const store=storeOf(b.dataset.store),q=b.dataset.q; store[q+'_none']=!store[q+'_none']; if(store[q+'_none']) store[q]=''; log('pick',{q,v:'none:'+store[q+'_none']}); return keep(); }
  if(act==='ev'){ const x=evOf(S.days[s.day])[+b.dataset.ev]; sub={v:'ev',ev:+b.dataset.ev,y:window.scrollY}; CASE(s).evOpened.push(`${x.kind}:${x.i}`); log('open_ev',{day:s.day,k:`${x.kind}:${x.i}`}); return render(); }
@@ -215,7 +208,7 @@ $.addEventListener('click',e=>{ const dead=e.target.closest('[data-dead]'); if(d
 function result(full){ const dev={w:innerWidth,h:innerHeight,touch:navigator.maxTouchPoints>0,mobile:/Mobi|Android/i.test(navigator.userAgent)};
  const r={v:2,study:C.version,code,order,mode,sample:!!S.meta.sample,built:S.meta.built,started:st.t0,finished:st.fin||Date.now(),dev,profile:st.profile,dead:st.dead};
  if(mode.includes('B')) r.B={cases:Object.values(st.B.cases).sort((a,b)=>a.b-b.b).map(c=>({id:c.id,cond:c.cond,b:c.b,ms:Math.round(c.ms),hid:Math.round(c.hid),opened:c.opened,evOpened:c.evOpened,expand:c.expand,revisits:c.revisits||0})),answers:st.B.answers,bg:st.B.bg||{}};
- if(mode.includes('A')) r.A={answers:st.A.answers,bg:st.A.bg,cards:st.A.cards,more:st.A.more,team:!!st.teamOpen};
+ if(mode.includes('A')) r.A={answers:st.A.answers,bg:st.A.bg,more:!!(st.A.moreSeen||st.A.more),team:!!st.teamOpen};
  if(full) r.events=st.events; return r; }
 const b64=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const compact=()=>'MB1:'+b64(JSON.stringify(result(false)));
