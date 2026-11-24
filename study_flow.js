@@ -1,7 +1,7 @@
 'use strict';
 /* 사용자 평가(2026-11-24 계획) — 한 링크로 끝까지. 참가 번호가 흐름을 정한다(참가자가 고르지 않는다).
-   개인 투자자 G: 안내·동의 → 브리핑 하나(자유롭게 봄) → 세 문항 → 제출
-   종사자 E: 안내·동의 → 브리핑 하나 → 세 문항 → 검토 요청 → 검토 의견 → 제출 (모두 같은 흐름)
+   개인 투자자 G: 안내·동의 → 브리핑 하나(자유롭게 봄) → 두 문항 → 제출
+   종사자 E: 안내·동의 → 브리핑 하나 → 두 문항 → 검토 요청 → 검토 의견 → 제출 (모두 같은 흐름)
    답을 맞고 틀림으로 채점하지 않는다. 결론을 먼저 보이고, 근거·세부는 펼쳐서 본다. 화면 규칙은 index.html 의 디자인 규칙 그대로. */
 const S=window.STIMULI,C=window.STUDY,$=document.getElementById('app'),Q=new URLSearchParams(location.search);
 /* 결과 자동 제출 주소(구글 Apps Script 웹 앱의 /exec). 비어 있으면 파일 공유·복사로 받는다. 로컬 시험 때만 ?submit= 로 바꿀 수 있다 */
@@ -30,7 +30,7 @@ const mode=code[0]==='G'?'B':'BA', order=valid?(S.assign[code]||((+code.slice(1)
 const ORD={1:[['1','linked'],['2','plain']],2:[['1','plain'],['2','linked']],3:[['2','linked'],['1','plain']],4:[['2','plain'],['1','linked']]};
 /* 11/24 밤: '시작 전' 두 질문은 뺀다 — 공통 링크 첫 화면에서 종사자·개인 투자자를 이미 고른다(번호의 E·G) */
 const steps=[{t:'start'}];
-/* 11/24 밤: 브리핑은 하나(5월 14일 LG전자, 출처가 이어진 버전) — 두 버전 비교는 하지 않는다 */
+/* 11/24 밤: 브리핑은 하나(stimuli_b.js 의 사례, 출처가 이어진 버전) — 두 버전 비교는 하지 않는다 */
 if(mode.includes('B')){ steps.push({t:'brief',day:S.sets['1'][0],cond:'linked',b:0},{t:'bq'}); }
 if(mode.includes('A')) steps.push({t:'review'},{t:'aq'});
 steps.push({t:'end'});
@@ -93,7 +93,7 @@ start:()=>{ const t=mode==='BA'?['약 10분 걸려요','브리핑 하나를 보�
  return note()+`<div class="top"><div class="brand">모닝브리프</div><div></div></div>
  <div class="h1">${mode==='A'?'검토 요청 하나에<br>의견을 남겨 주세요':'AI 투자 브리핑을<br>써 보고 의견을 주세요'}</div>
  <div class="lead">여러 AI 가 함께 만든 투자 리서치를 사람들이 어떻게 쓰는지 알아보는 연구예요. 맞고 틀린 답은 없어요.</div>
- <div class="panel">${[['clock',t[0],t[1]],['cal','과거 자료예요','2026년 5월의 기록이에요. 투자 조언이 아니에요.'],['pen','고른 답과 본 과정을 기록해요','고른 답, 적은 말, 펼쳐 본 내용, 본 시간'],['lock','참가 번호로만 기록해요','이름은 입력하지 않아요.'],['doc','수업 프로젝트 보고서와 발표에 써요','여러 사람의 의견을 모아 싣고, 인용은 번호로 해요.'],(SUBMIT?['share','제출하면 연구용 구글 시트에 저장돼요','연구 담당자만 볼 수 있어요.']:['share','결과는 1:1로 보내요','링크를 보내 준 연구 담당자 한 사람만 받아요.']),['exit','언제든 그만둘 수 있어요','보낸 뒤에도 번호를 알려 주면 지워요.']].map(([i,a,b])=>`<div class="li"><div class="dot">${ic(i)}</div><div class="tx"><div class="nm">${a}</div><div class="sm2">${b}</div></div></div>`).join('')}</div>
+ <div class="panel">${[['clock',t[0],t[1]],['cal','과거 자료예요','2026년 6월의 기록이에요. 투자 조언이 아니에요.'],['pen','고른 답과 본 과정을 기록해요','고른 답, 적은 말, 펼쳐 본 내용, 본 시간'],['lock','참가 번호로만 기록해요','이름은 입력하지 않아요.'],['doc','수업 프로젝트 보고서와 발표에 써요','여러 사람의 의견을 모아 싣고, 인용은 번호로 해요.'],(SUBMIT?['share','제출하면 연구용 구글 시트에 저장돼요','연구 담당자만 볼 수 있어요.']:['share','결과는 1:1로 보내요','링크를 보내 준 연구 담당자 한 사람만 받아요.']),['exit','언제든 그만둘 수 있어요','보낸 뒤에도 번호를 알려 주면 지워요.']].map(([i,a,b])=>`<div class="li"><div class="dot">${ic(i)}</div><div class="tx"><div class="nm">${a}</div><div class="sm2">${b}</div></div></div>`).join('')}</div>
  <button class="chk" data-act="consent"><span class="box ${st.consent?'on':''}">${ic('check')}</span>안내를 읽고 참여에 동의해요</button>`+sticky('동의하고 시작하기','next',!st.consent); },
 profile:()=>{ if(sub&&sub.v==='inel') return note()+`<div class="center"><div class="h1" style="margin-top:72px">참여 조건을 확인해 주세요</div><div class="lead">이번 평가는 금융회사에서 투자, 리서치, 심사, 상품기획 관련 업무를 현재 하고 있거나 1년 이상 한 분, 또는 주식을 직접 거래해 본 분을 대상으로 해요. 시간을 내 주셔서 감사합니다.</div></div>
   <button class="link" data-act="uninel"><span>응답 다시 확인하기</span><span class="chev">›</span></button>`;
@@ -117,7 +117,7 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
    ${src?`<div class="src"><span class="tag">AI가 본 자료 · ${esc(src.label)} ${esc(src.date)}</span>${x.link.lines.map(i=>`<div class="ln"><span class="hi">${esc(src.lines[i])}</span></div>`).join('')}</div>
     <button class="link" data-act="source" data-sid="${esc(src.id)}" data-from="link"><span>이 자료 전체 보기</span><span class="chev">›</span></button>`:''}
    <button class="link" data-act="sources"><span>AI가 본 자료 목록 · ${d.sources.length}건</span><span class="chev">›</span></button></div>`+sticky('브리핑으로 돌아가기','closesub'); }
- const top1=p.target[0], more=p.target.length-1, evOpen=opened(s,'ev'), wOpen=opened(s,'weights'), all=opened(s,'all');
+ const top1=p.target.find(x=>x.code===d.code)||p.target[0], more=p.target.length-1, evOpen=opened(s,'ev'), wOpen=opened(s,'weights'), all=opened(s,'all');
  return note(d)+(st.ret!=null?`<div class="back"><button data-act="ret">‹ 질문으로 돌아가기</button><span>다시 보는 중</span></div>`:s.b?`<div class="back"><button data-act="back">‹ 첫 번째 브리핑</button><span></span></div>`:'')+topbar('투자 브리핑')+`<div class="sub" style="margin-top:-8px">${esc(d.dateLabel)} 오전 8시</div>
  <div class="card"><div class="k">모의 포트폴리오 · 오늘 담을 비중</div><div class="big">${esc(top1.name)} 비중 ${pc(top1.w)}</div><div class="s">현금 비중 ${pc(p.cash)} · AI 분석가 6명의 판단을 가중치로 합친 모의 비중이에요</div>
   <div class="hold">${p.target.map(t=>`<div class="hrow"><span>${esc(t.name)}</span><b>${pc(t.w)}</b></div>`).join('')}${p.cash>0.005?`<div class="hrow"><span>현금</span><b>${pc(p.cash)}</b></div>`:''}</div></div>
@@ -128,7 +128,7 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
  <div class="panel" style="margin-top:12px"><button class="fold2" data-act="expand" data-k="ev"><span>판단 근거 보기 <span class="cnt">${E.length}</span></span><span class="chev">${evOpen?'⌃':'⌄'}</span></button>
   ${evOpen?E.slice(0,all?E.length:5).map((x,k)=>`<button class="li" data-act="ev" data-ev="${k}"><div class="tx"><div class="two-l">${esc(x.text)}</div><div class="meta cut">${linked&&x.kind==='item'?'<b class="lk">자료 바로 보기</b> · ':''}${esc(x.srcLabel)} 자료 · AI 분석가 ${x.agent}</div></div><span class="chev">›</span></button>`).join('')+(E.length>5&&!all?`<button class="fold" data-act="expand" data-k="all"><span>${E.length-5}개 더 보기</span><span>⌄</span></button>`:''):''}
   <button class="fold2" data-act="expand" data-k="weights"><span>가중치 자세히 보기</span><span class="chev">${wOpen?'⌃':'⌄'}</span></button>
-  ${wOpen?`<div style="padding-bottom:16px"><div class="meta">성과가 좋았던 AI 분석가에 더 큰 가중치를 줘요. 분석가마다 받은 가중치를 그 분석가가 추천한 종목에 똑같이 나눠 담아요.</div>
+  ${wOpen?`<div style="padding-bottom:16px"><div class="meta">성과가 좋았던 AI 분석가에 더 큰 가중치를 줘요. 분석가마다 받은 가중치를 그 분석가가 추천한 종목에 똑같이 나눠 담아요.${p.cash>0.005?` 추천을 내지 않은 분석가의 가중치(${p.agents.filter(a=>a.act==='추천 없음'&&a.w>0.0005).map(a=>`분석가 ${a.agent} ${pc(a.w)}`).join(', ')})는 현금으로 남아요.`:''}</div>
    <div class="src" style="margin-top:12px"><span class="tag">${esc(d.name)} 비중 ${pc(p.target.find(t=>t.code===d.code).w)}는 이렇게 모였어요</span>
     ${p.agents.filter(a=>a.act==='이 종목 추천'&&a.w>0.0005).sort((x,y)=>y.w/y.n-x.w/x.n).map(a=>`<div class="kv"><span>분석가 ${a.agent} · 가중치 ${pc(a.w)} ÷ 추천 ${a.n}종목</span><span>${(a.w/a.n*100).toFixed(1)}%</span></div>`).join('')}</div>
    ${p.agents.map(a=>wrow(`분석가 ${a.agent}`,a.w)+`<div class="meta wm">${esc(a.act)}${a.n>1?` · 추천 ${a.n}종목`:''}</div>`).join('')}</div>`:''}

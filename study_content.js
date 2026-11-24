@@ -61,9 +61,8 @@ window.STUDY = {
  B: {
   intro: "개장 전에 받은 브리핑이라고 생각하고, 평소 하던 대로 봐 주세요.",
   questions: [
-   {id: "B1", q: "오늘 아침 이 브리핑을 받았다면, {name} 주식은 어떻게 하시겠어요?", type: "single", options: [["buy", "산다"], ["watch", "지켜본다"], ["check", "더 알아본다"], ["pass", "사지 않는다"]], text: "그렇게 정한 이유를 적어 주세요", textOptional: true},
-   {id: "B2", q: "내 돈으로 투자한다면, {name}에 얼마나 담으시겠어요?", lead: "브리핑의 비중은 {w}예요.", type: "single", options: [["more", "{w}보다 많이"], ["similar", "비슷하게"], ["less", "{w}보다 적게"], ["none", "담지 않는다"]], text: "왜 그렇게 정했나요?"},
-   {id: "B3", q: "더 보고 싶었는데 여기에 없던 정보가 있나요?", type: "text", optional: true}
+   {id: "B1", q: "브리핑은 {name} 비중을 {w}로 잡았어요. 어떻게 하시겠어요?", type: "single", options: [["follow", "그대로 따른다"], ["less", "비중을 줄여서 따른다"], ["check", "더 확인한 뒤 정한다"], ["no", "따르지 않는다"]], text: "그렇게 정한 이유를 적어 주세요"},
+   {id: "B2", q: "따르기 전에 가장 먼저 확인하고 싶은 것은 무엇인가요?", type: "text"}
   ]
  }
 };
