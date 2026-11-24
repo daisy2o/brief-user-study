@@ -217,7 +217,7 @@ const participationOptions=[
   {group:'G', label:'개인 투자자', time:'약 5분', task:'브리핑 체험과 짧은 설문', criteria:'주식, 펀드, ETF 등에 직접 투자하는 분'}
 ];
 const notices=()=>`${TEST?'<div class="note test-note">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>':''}
-  <div class="note">연구용 화면 · 투자 조언 아님</div><div class="brand">모닝브리프</div>`;
+  <div class="brand">모닝브리프</div>`;
 const option=({group,label,time,task,criteria})=>`<button type="button" class="entry-option" data-k="g" data-v="${group}" aria-pressed="${g===group}" ${busy?'disabled':''}>
   <span class="entry-option-name">${label}</span><span class="entry-option-time">${time}</span><span class="entry-option-check" aria-hidden="true">✓</span>
   <span class="entry-option-task">${task}</span><span class="entry-option-criteria">${criteria}</span>

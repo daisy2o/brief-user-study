@@ -87,7 +87,7 @@ function qHtml(q,name){ if(!shown(q)) return ''; const store=storeOf(name),v=sto
 const allDone=(qs,name)=>qs.every(q=>answered(q,storeOf(name)));
 
 /* ── 화면 조각 ── */
-const note=d=>(TEST_LINK?`<div class="note" style="color:#B42318;font-weight:700">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>`:'')+`<div class="note">연구용 화면 · 투자 조언 아님${d?(d.anon?' · 과거 어느 하루의 기록':' · '+esc(d.date.slice(0,4))+'년 '+esc(d.dateLabel.split(' ').slice(0,2).join(' '))+'의 기록'):''}</div>`;
+const note=()=>TEST_LINK?`<div class="note" style="color:#B42318;font-weight:700">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>`:'';   /* 11/24 밤 Daisy: '연구용 화면 · 투자 조언 아님' 줄 삭제(동의 화면의 '과거 자료예요. 투자 조언이 아니에요'는 남음) */
 const sticky=(label,act,dis)=>`<div class="sticky"><button class="cap pri" data-act="${act}" ${dis?'disabled':''}>${label}</button></div>`;
 const back=(label,right)=>`<div class="back"><button data-act="back">‹ ${label||'이전'}</button><span>${right||''}</span></div>`;
 const topbar=t=>`<div class="top"><div class="brand">${t}</div><div class="top-r"><div class="av">나</div></div></div>`;
