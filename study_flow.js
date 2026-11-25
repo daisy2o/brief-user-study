@@ -5,7 +5,7 @@
    답을 맞고 틀림으로 채점하지 않는다. 결론을 먼저 보이고, 근거·세부는 펼쳐서 본다. 화면 규칙은 index.html 의 디자인 규칙 그대로. */
 const S=window.STIMULI,C=window.STUDY,$=document.getElementById('app'),Q=new URLSearchParams(location.search);
 /* 11/24 회의 뒤 결정: 참가자가 그 뒤 주가를 기억해 답이 바뀌지 않게 날짜를 가린다('판단일'·'전날', AI 가 본 자료의 내용·수치는 그대로).
-   11/24 밤 Daisy "되돌려": 종목명 가림(종목 A·B…)은 풀고 실제 종목명을 보인다 — 날짜 가림만 남는다. */
+   11/24 밤 결정: 종목명 가림(종목 A·B…)은 풀고 실제 종목명을 보인다 — 날짜 가림만 남는다. */
 const AG=window.AGENTS||{};
 (function anonymize(){
  Object.values(S.days).forEach(d=>{
@@ -39,7 +39,7 @@ const SRCIC={price:'flow',flows:'flow',indicators:'flow'};
 /* ── 참가 번호와 흐름 ── */
 const code=(Q.get('p')||'').toUpperCase(), valid=/^[EG]\d\d$/.test(code)&&+code.slice(1)>=1;
 /* 배정표(S.assign)에 있는 번호는 그 순서, 공통 링크로 받은 그 뒤 번호는 순서 1~4 를 번호 순으로 돌아가며 */
-/* 11/24 밤 Daisy: 종사자는 모두 10분판(브리핑 + 검토 요청) — only=a 는 받지 않는다 */
+/* 11/24 밤 결정: 종사자는 모두 10분판(브리핑 + 검토 요청) — only=a 는 받지 않는다 */
 const mode=code[0]==='G'?'B':'BA', order=valid?(S.assign[code]||((+code.slice(1)-1)%4)+1):1;
 const ORD={1:[['1','linked'],['2','plain']],2:[['1','plain'],['2','linked']],3:[['2','linked'],['1','plain']],4:[['2','plain'],['1','linked']]};
 /* 11/24 밤: '시작 전' 두 질문은 뺀다 — 공통 링크 첫 화면에서 종사자·개인 투자자를 이미 고른다(번호의 E·G) */
