@@ -32,6 +32,8 @@ const ic=n=>`<svg class="ic" viewBox="0 0 24 24">${I[n]}</svg>`;
 const won=x=>Math.round(x).toLocaleString('ko-KR')+'원';
 const pct=p=>`<span class="${p>=0?'up':'down'}">${p>=0?'+':''}${p.toFixed(2)}%</span>`;
 const weightPct=w=>(w*100).toFixed(1)+'%';
+/* 목표 비중 목록(종목 + 현금)은 합이 100.0% 로 보이게 가장 큰 나머지 방식으로 반올림한다(따로 반올림하면 99.9% 가 될 수 있다 — 11/25) */
+const roundTo1000=ws=>{const raw=ws.map(w=>w*1000),fl=raw.map(Math.floor);let left=1000-fl.reduce((s,x)=>s+x,0);raw.map((x,i)=>[x-fl[i],i]).sort((p,q)=>q[0]-p[0]).forEach(([,i])=>{if(left>0){fl[i]++;left--;}});return fl.map(x=>(x/10).toFixed(1)+'%');};
 const SRCIC={price:'flow',flows:'flow',indicators:'flow'};
 
 /* ── 참가 번호와 흐름 ── */
@@ -167,7 +169,7 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
  const top1=p.target.find(x=>x.code===d.code)||p.target[0], wOpen=opened(s,'weights');
  return note(d)+(st.ret!=null?'<div class="back"><button data-act="ret">‹ 질문으로 돌아가기</button><span></span></div>':back('참여 안내',''))+topbar('투자 브리핑')+`<div style="margin:4px 0 16px"><div style="font-size:14px;font-weight:600;color:var(--mute)">판단일 · 장 시작 전</div><div style="font-size:24px;font-weight:700;color:var(--ink);line-height:1.4;margin-top:6px">AI 분석가 6명의 판단을 모아<br>오늘 담을 비중을 정했어요</div></div>
  <div class="card"><div class="k">과거 사례 · 모의 포트폴리오 목표 비중</div><div class="big">${esc(top1.name)} 비중 ${weightPct(top1.w)}</div>
-  <div class="hold">${[...p.target].sort((a,b)=>(b.code===d.code)-(a.code===d.code)).map(t=>`<div class="hrow"><span>${esc(t.name)}</span><b>${weightPct(t.w)}</b></div>`).join('')}<div class="hrow"><span>현금</span><b>${weightPct(p.cash)}</b></div></div></div>
+  <div class="hold">${(()=>{const ts=[...p.target].sort((a,b)=>(b.code===d.code)-(a.code===d.code)),lab=roundTo1000([...ts.map(x=>x.w),p.cash]);return ts.map((t,i)=>`<div class="hrow"><span>${esc(t.name)}</span><b>${lab[i]}</b></div>`).join('')+`<div class="hrow"><span>현금</span><b>${lab[ts.length]}</b></div>`;})()}</div></div>
  <div class="panel weight-panel">
   <div class="panel-intro"><strong>같은 추천, 다른 비중</strong><p class="meta">같은 추천을 분석가별로 똑같이 반영한 경우와 성과를 반영한 경우를 비교했어요.</p></div>
   ${weightComparison(p,top1)}
@@ -201,7 +203,7 @@ bq:()=>{ const d=S.days[S.sets['1'][0]], p=d.portfolio, stock=p.target.find(x=>x
 review:()=>{ const A=C.A,qs=[A.q1,A.q2,A.q3];
  return note()+`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`+topbar('검토 요청')+`<div class="card"><div class="k">${esc(A.request.label)}</div><div class="big" style="font-size:24px">${esc(A.request.title)}</div><div class="s">${esc(A.request.sub)}</div></div>
  <h2>비교 결과</h2><div class="panel pad"><div class="h3">${esc(A.summary)}</div>${chart(A.card)}<div class="meta" style="margin-top:8px">${esc(A.legend)}</div>
-  <p class="meta">${esc(A.card.scope)} · 최종 계산</p>
+  <p class="meta">${esc(A.card.scope)}</p>
   <dl class="review-findings">${A.keyFindings.map(f=>`<div><dt>${esc(f.title)}</dt><dd>${esc(f.text)}</dd></div>`).join('')}</dl>
   <button class="fold" data-act="amore"><span>비교 결과 자세히 보기</span><span>${st.A.more?'⌃':'⌄'}</span></button>
   ${st.A.more?`<div class="meta" style="margin-top:6px">${esc(A.card.note)}</div>`+A.more.map(m=>`<div class="oth" data-m="${m.id}"><div class="one2">${esc(m.t)}</div><div class="meta mwhy">${esc(m.why)}</div>${m.rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join(''):''}</div>
