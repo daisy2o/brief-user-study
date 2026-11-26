@@ -30,7 +30,7 @@ const I={doc:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>'
  wallet:'<path d="M4 7h16v12H4zM4 7l2-3h10l2 3M15 13h2"/>',grid:'<path d="M5 5h6v6H5zM13 5h6v6h-6zM5 13h6v6H5zM13 13h6v6h-6z"/>'};
 const ic=n=>`<svg class="ic" viewBox="0 0 24 24">${I[n]}</svg>`;
 const won=x=>Math.round(x).toLocaleString('ko-KR')+'원';
-const pct=p=>`<span class="${p>=0?'up':'down'}">${p>=0?'+':''}${p.toFixed(2)}%</span>`;
+const pct=p=>`<span class="${p>=0?'up':'down'}">${p>=0?'+':'−'}${Math.abs(p).toFixed(2)}%</span>`;
 const weightPct=w=>(w*100).toFixed(1)+'%';
 /* 목표 비중 목록(종목 + 현금)은 합이 100.0% 로 보이게 가장 큰 나머지 방식으로 반올림한다(따로 반올림하면 99.9% 가 될 수 있다 — 11/25) */
 const roundTo1000=ws=>{const raw=ws.map(w=>w*1000),fl=raw.map(Math.floor);let left=1000-fl.reduce((s,x)=>s+x,0);raw.map((x,i)=>[x-fl[i],i]).sort((p,q)=>q[0]-p[0]).forEach(([,i])=>{if(left>0){fl[i]++;left--;}});return fl.map(x=>(x/10).toFixed(1)+'%');};
@@ -134,8 +134,8 @@ function chart(card){ const X=v=>((v+4)/8*310+20).toFixed(1);
   const label=card.bars.map(b=>`${b.label} ${b.v} %p/월, 90% 구간 ${b.lo}~${b.hi}`).join('. ');
   return `<svg role="img" aria-label="${esc(label)}" viewBox="0 0 350 ${card.bars.length*56+26}" style="display:block;width:100%;margin-top:12px"><line x1="${X(0)}" y1="0" x2="${X(0)}" y2="${card.bars.length*56}" stroke="#111" stroke-width="1"/>
    ${card.bars.map((b,i)=>{const y=i*56; return `<text x="20" y="${y+16}" font-size="13" fill="#3D3D3D">${esc(b.label)}</text><line x1="${X(b.lo)}" y1="${y+34}" x2="${X(b.hi)}" y2="${y+34}" stroke="#111" stroke-width="3" stroke-linecap="round"/><circle cx="${X(b.v)}" cy="${y+34}" r="6" fill="#111"/>
-    <text x="330" y="${y+16}" font-size="13" font-weight="700" fill="#111" text-anchor="end">${b.v>0?'+':''}${b.v.toFixed(2)}%p</text>`;}).join('')}
-   ${[-4,-2,0,2,4].map(v=>`<text x="${X(v)}" y="${card.bars.length*56+18}" font-size="11" fill="#6B6F76" text-anchor="middle">${v>0?'+':''}${v}</text>`).join('')}</svg>`; }
+    <text x="330" y="${y+16}" font-size="13" font-weight="700" fill="#111" text-anchor="end">${b.v>0?'+':b.v<0?'−':''}${Math.abs(b.v).toFixed(2)}%p</text>`;}).join('')}
+   ${[-4,-2,0,2,4].map(v=>`<text x="${X(v)}" y="${card.bars.length*56+18}" font-size="11" fill="#6B6F76" text-anchor="middle">${v>0?'+':v<0?'−':''}${Math.abs(v)}</text>`).join('')}</svg>`; }
 
 const V={
 start:()=>{ const t=mode==='BA'?['약 10분 걸려요','과거 브리핑을 살펴보고 사내 시범 운영 검토에 답해요']:mode==='A'?['약 5분 걸려요','검토 요청 하나를 보고 의견을 남겨요']:['약 5분 걸려요','과거 브리핑을 살펴보고 어디까지 활용할지 답해요'];
@@ -176,7 +176,7 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
   <button class="fold2" data-act="expand" data-k="weights" aria-expanded="${wOpen}"><span>비중 계산 자세히 보기</span><span class="chev" aria-hidden="true">${wOpen?'⌃':'⌄'}</span></button>
  ${wOpen?weightDetails(p,top1):''}</div>
  <h2>${esc(d.name)}</h2>
- <div class="panel pad"><div class="meta" style="font-weight:600">전날 종가</div><div class="row2"><div><div class="price" style="margin-top:4px">${won(m.close)}</div><div class="chg">전날 하루 등락률 <span class="${m.pct>=0?'up':'down'}">${m.pct>=0?'+':''}${m.pct.toFixed(2)}%</span> <span class="meta">(${m.chg>=0?'+':''}${Math.round(m.chg).toLocaleString('ko-KR')}원)</span></div></div></div></div>
+ <div class="panel pad"><div class="meta" style="font-weight:600">전날 종가</div><div class="row2"><div><div class="price" style="margin-top:4px">${won(m.close)}</div><div class="chg">전날 하루 등락률 <span class="${m.pct>=0?'up':'down'}">${m.pct>=0?'+':'−'}${Math.abs(m.pct).toFixed(2)}%</span> <span class="meta">(${m.chg>=0?'+':'−'}${Math.abs(Math.round(m.chg)).toLocaleString('ko-KR')}원)</span></div></div></div></div>
  <div class="panel pad" style="margin-top:12px"><div class="meta" style="font-weight:600">AI의 전망 · 다음 거래일</div><div class="h3" style="margin-top:6px">${opin(o)}</div><div class="bar">${Array.from({length:6},(_,i)=>`<i class="${i<o.up?'':'off'}"></i>`).join('')}</div>
   ${d.marketFlags.map(f=>{ const g=String(f); if(g.startsWith('의견 차이')) return ''; const v=g.match(/거래량 ([\d.]+)배/); return v?`전날 거래량이 평소의 ${v[1]}배였어요`:esc(g); }).filter(Boolean).map(x=>`<div class="meta" style="margin-top:6px">눈여겨볼 점 · ${x}</div>`).join('')}</div>
  <div class="panel" style="margin-top:12px"><div style="padding:16px 0 4px"><div style="font-size:17px;font-weight:700;color:var(--ink)">AI 분석가 6명의 판단</div></div>
