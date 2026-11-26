@@ -214,14 +214,14 @@ const go=c=>{ const q=new URLSearchParams({p:c}); if(TEST) q.set('test','1'); lo
 /* 하던 참여가 있으면 바로 넘기지 않고 '이어서 하기 / 처음부터 다시 고르기'를 보인다(11/24 회의 — 모드를 바꿀 수 있게) */
 let saved=null; try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.code&&!Q.get('reset')) saved=s; }catch(e){}
 const participationOptions=[
-  {group:'E', label:'금융업 종사자', time:'약 10분', task:'브리핑 체험과 시범 운영 검토', criteria:'금융회사에서 투자, 리서치, 심사, 상품기획 관련 업무를 현재 하거나 1년 이상 해 본 분'},
-  {group:'G', label:'개인 투자자', time:'약 5분', task:'브리핑 활용에 관한 짧은 질문', criteria:'주식, 펀드, ETF 등에 직접 투자하는 분'}
+  {group:'E', label:'금융업 종사자', time:'약 10분', criteria:'금융회사에서 투자·리서치·심사·상품기획 일을 하거나 1년 이상 해 본 분'},
+  {group:'G', label:'개인 투자자', time:'약 5분', criteria:'주식·펀드·ETF에 직접 투자하는 분'}
 ];
 const notices=()=>`${TEST?'<div class="note test-note">테스트 모드 · 이 응답은 정식 결과에 들어가지 않아요</div>':''}
   <div class="brand">모닝브리프</div>`;
-const option=({group,label,time,task,criteria})=>`<button type="button" class="entry-option" data-k="g" data-v="${group}" aria-pressed="${g===group}" ${busy?'disabled':''}>
+const option=({group,label,time,criteria})=>`<button type="button" class="entry-option" data-k="g" data-v="${group}" aria-pressed="${g===group}" ${busy?'disabled':''}>
   <span class="entry-option-name">${label}</span><span class="entry-option-time">${time}</span><span class="entry-option-check" aria-hidden="true">✓</span>
-  <span class="entry-option-task">${task}</span><span class="entry-option-criteria">${criteria}</span>
+  <span class="entry-option-criteria">${criteria}</span>
   </button>`;
 function render(){
   if(saved){ const who=saved.code[0]==='E'?'금융업 종사자':'개인 투자자';

@@ -203,6 +203,26 @@ input.line::placeholder{color:var(--mute)}
 .review-findings dd{white-space:pre-line}
 .top+.sub{margin-bottom:4px}
 .stepbar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}.stepbar div{background:var(--panel);border-radius:16px;padding:10px 8px;font-size:13px;font-weight:600;color:var(--ink);text-align:center}.stepbar b{display:block;font-size:12px;color:var(--mute);font-weight:600}
+/* 11/27 판 -11: 하나 고르기 = 동그라미, 여러 개 고르기 = 네모(보기 앞 표시) · 브리핑 한 장 배치 · 단계 카드 · 도입 검토 */
+.optb{display:flex;align-items:center;gap:10px;word-break:keep-all}
+.optb::before{content:"";flex:none;width:18px;height:18px;box-sizing:border-box;border:1.5px solid #B4B9C1;border-radius:50%;background:#fff}
+.optb.sel::before{border:5.5px solid var(--ink)}
+.opts[data-multi] .optb::before{border-radius:5px}
+.opts[data-multi] .optb.sel::before{border:0;background:var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/14px no-repeat}
+.bcard{padding:22px 20px 0}
+.bcard .bname{font-size:26px;font-weight:800;letter-spacing:-.5px;color:var(--on-accent)}
+.bcard .bw{display:flex;align-items:baseline;gap:12px;margin-top:6px;color:var(--on-accent)}.bcard .bw span{font-size:15px;font-weight:700}.bcard .bw b{font-size:44px;font-weight:800;letter-spacing:-1px;line-height:1.1}
+.bcard .beq{margin-top:14px;padding:12px 0;border-top:1px solid rgba(17,17,17,.12);font-size:14px;color:var(--accent-sub)}.bcard .beq b{color:var(--on-accent)}
+.bcard .bfold{display:flex;justify-content:space-between;align-items:center;width:100%;padding:14px 0 16px;border-top:1px solid rgba(17,17,17,.12);font-size:15px;font-weight:700;color:var(--on-accent);text-align:left}
+.comp .hrow{padding:10px 12px;margin:0 -12px;border-radius:10px;color:var(--ink)}.comp .hrow.me{background:var(--tint);font-weight:700}
+.pline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.pline .chgv{font-size:16px;font-weight:600}
+.steps{padding:18px 20px 6px}.steps .srow{display:flex;align-items:center;gap:14px;padding:13px 0;border-top:1px solid rgba(17,17,17,.12)}.steps .k+.srow{border-top:0}
+.steps .sn{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.75);display:grid;place-items:center;font-size:15px;font-weight:800;color:var(--on-accent)}.steps .st{font-size:18px;font-weight:800;letter-spacing:-.3px;color:var(--on-accent)}
+.chk4 .crow{display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line)}.chk4 .crow:first-child{border-top:0}
+.chk4 .cn{flex:none;width:26px;height:26px;border-radius:13px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-size:13px;font-weight:700;margin-top:1px}
+.chk4 .ct{font-size:15px;font-weight:700;color:var(--ink);line-height:1.4;word-break:keep-all}.chk4 .cs{margin-top:3px;font-size:13px;line-height:1.5;word-break:keep-all}
+.concl{margin-top:14px;padding:14px;border-radius:16px;background:var(--surface)}.concl div:last-child{font-size:14px;color:var(--ink);line-height:1.6;margin-top:4px;word-break:keep-all}
+.sticky .relink{display:block;margin:0 auto 10px;font-size:14px;font-weight:600;color:var(--body);text-decoration:underline;text-underline-offset:3px}
 </style>
 </head>
 <body>
