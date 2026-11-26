@@ -132,10 +132,11 @@ function recentRecord(record,s,key){
 }
 function chart(card){ const X=v=>((v+4)/8*310+20).toFixed(1);
   const label=card.bars.map(b=>`${b.label} ${b.v} %p/월, 90% 구간 ${b.lo}~${b.hi}`).join('. ');
-  return `<svg role="img" aria-label="${esc(label)}" viewBox="0 0 350 ${card.bars.length*56+26}" style="display:block;width:100%;margin-top:12px"><line x1="${X(0)}" y1="0" x2="${X(0)}" y2="${card.bars.length*56}" stroke="#111" stroke-width="1"/>
+  return `<svg role="img" aria-label="${esc(label)}" viewBox="0 0 350 ${card.bars.length*56+(card.axis?44:26)}" style="display:block;width:100%;margin-top:12px"><line x1="${X(0)}" y1="0" x2="${X(0)}" y2="${card.bars.length*56}" stroke="#111" stroke-width="1"/>
    ${card.bars.map((b,i)=>{const y=i*56; return `<text x="20" y="${y+16}" font-size="13" fill="#3D3D3D">${esc(b.label)}</text><line x1="${X(b.lo)}" y1="${y+34}" x2="${X(b.hi)}" y2="${y+34}" stroke="#111" stroke-width="3" stroke-linecap="round"/><circle cx="${X(b.v)}" cy="${y+34}" r="6" fill="#111"/>
     <text x="330" y="${y+16}" font-size="13" font-weight="700" fill="#111" text-anchor="end">${b.v>0?'+':b.v<0?'−':''}${Math.abs(b.v).toFixed(2)}%p</text>`;}).join('')}
-   ${[-4,-2,0,2,4].map(v=>`<text x="${X(v)}" y="${card.bars.length*56+18}" font-size="11" fill="#6B6F76" text-anchor="middle">${v>0?'+':v<0?'−':''}${Math.abs(v)}</text>`).join('')}</svg>`; }
+   ${[-4,-2,0,2,4].map(v=>`<text x="${X(v)}" y="${card.bars.length*56+18}" font-size="11" fill="#6B6F76" text-anchor="middle">${v>0?'+':v<0?'−':''}${Math.abs(v)}</text>`).join('')}
+   ${card.axis?`<text x="20" y="${card.bars.length*56+38}" font-size="11" fill="#6B6F76">${esc(card.axis[0])}</text><text x="330" y="${card.bars.length*56+38}" font-size="11" fill="#6B6F76" text-anchor="end">${esc(card.axis[1])}</text>`:''}</svg>`; }
 
 const V={
 start:()=>{ const t=mode==='BA'?['약 10분 걸려요','과거 브리핑을 살펴보고 사내 시범 운영 검토에 답해요']:mode==='A'?['약 5분 걸려요','검토 요청 하나를 보고 의견을 남겨요']:['약 5분 걸려요','과거 브리핑을 살펴보고 어디까지 활용할지 답해요'];
@@ -206,7 +207,7 @@ review:()=>{ const A=C.A,qs=[A.q1,A.q2,A.q3];
   <p class="meta">${esc(A.card.scope)}</p>
   <dl class="review-findings">${A.keyFindings.map(f=>`<div><dt>${esc(f.title)}</dt><dd>${esc(f.text)}</dd></div>`).join('')}</dl>
   <button class="fold" data-act="amore"><span>비교 결과 자세히 보기</span><span>${st.A.more?'⌃':'⌄'}</span></button>
-  ${st.A.more?`<div class="meta" style="margin-top:6px">${esc(A.card.note)}</div>`+A.more.map(m=>`<div class="oth" data-m="${m.id}"><div class="one2">${esc(m.t)}</div><div class="meta mwhy">${esc(m.why)}</div>${m.rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join(''):''}</div>
+  ${st.A.more?(A.card.note?`<div class="meta" style="margin-top:6px">${esc(A.card.note)}</div>`:'')+A.more.map(m=>`<div class="oth" data-m="${m.id}"><div class="one2">${esc(m.t)}</div><div class="meta mwhy">${esc(m.why)}</div>${m.rows.map(r=>`<div class="kv"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join('')}</div>`).join(''):''}</div>
  <h2>검토 의견</h2>${qs.map(q=>qHtml(q,'a')).join('')}`
  +sticky('다음으로','next',!allDone(qs,'a')); },
 aq:()=>{ const A=C.A; return note()+back('검토 요청 다시 보기','')+`<div class="h1">하시는 일</div>${A.background.map(q=>qHtml(Object.assign({},q,{grid:true}),'bg')).join('')}`+sticky('마치기','next',!allDone(A.background,'bg')); },
