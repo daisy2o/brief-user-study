@@ -1,7 +1,7 @@
 'use strict';
 /* 사용자 평가(2026-11-24 계획) — 한 링크로 끝까지. 참가 번호가 흐름을 정한다(참가자가 고르지 않는다).
    개인 투자자 G: 안내·동의 → 브리핑 하나(자유롭게 봄) → 브리핑 의견(다섯 문항)·투자 경험 → 제출
-   종사자 E: 안내·동의 → 브리핑 하나 → 브리핑 의견(한 문항) → 도입 검토(검토 자료 → 검토 의견) → 하시는 일 → 제출
+   종사자 E: 안내·동의 → 브리핑 하나 → 브리핑 의견(같은 다섯 문항) → 도입 검토(검토 자료 → 검토 의견) → 하시는 일 → 제출
    판 -11(11/27): 참가자에게는 자기 입장에서 답할 수 있는 것만 묻는다(자료가 맞는지 판정·이해 시험 없음). 종사자에게는 수익률 결과가 아니라 확인 절차를 보여 준다.
    답을 맞고 틀림으로 채점하지 않는다. 결론을 먼저 보이고, 근거·세부는 펼쳐서 본다. 화면 규칙은 index.html 의 디자인 규칙 그대로. */
 const S=window.STIMULI,C=window.STUDY,$=document.getElementById('app'),Q=new URLSearchParams(location.search);
@@ -74,7 +74,9 @@ document.addEventListener('visibilitychange',()=>{ const s=step(); if(s.t!=='bri
 
 /* ── 이동 ── */
 function go(d){ stopClock(); sub=null; const n=st.idx+d; if(n<0||n>=steps.length) return;
-  st.ret=null; st.retY=null; st.idx=n; log('step',{to:steps[n].t}); render(); startClock(); }
+  st.ret=null; st.retY=null; st.idx=n; log('step',{to:steps[n].t}); render(); startClock(); autoSubmit(); }
+/* 판 -12(11/27): 마지막 문항에서 '제출하기'를 누르면 끝 화면으로 오면서 바로 제출한다. 끝 화면의 버튼은 실패했을 때 다시 보내는 데만 쓴다 */
+function autoSubmit(){ if(step().t==='end'&&SUBMIT&&!st.sentRemote&&!sending) submitRemote(); }
 function toast(m){ let e=document.querySelector('.toast'); if(!e){e=document.createElement('div');e.className='toast';document.body.appendChild(e);} e.textContent=m; clearTimeout(toastT); toastT=setTimeout(()=>e.remove(),2200); }
 
 /* ── 문항 ── */
@@ -199,9 +201,9 @@ brief:s=>{ const d=S.days[s.day],m=d.market,o=d.opinions,p=d.portfolio,E=evOf(d)
   }).join('')}
   <button class="fold2" data-act="sources"><span>AI가 본 자료 목록 · ${d.sources.length}건</span><span class="chev">›</span></button></div>`
  +(st.ret!=null?sticky('질문으로 돌아가기','ret'):sticky('브리핑 의견 남기기','next')); },
-bq:()=>{ const qs=mode==='B'?[...C.B.questions,...C.B.gQuestions]:C.B.questions;
+bq:()=>{ const qs=[...C.B.questions,...C.B.gQuestions];   /* 판 -12: 브리핑 문항 다섯은 종사자·개인 투자자 같게(투자 경험만 개인 투자자) */
  return note()+`<div class="back"><button data-act="revisit" data-b="0">‹ 브리핑 다시 보기</button><span></span></div><div class="h1">브리핑을 어떻게 쓰시겠어요?</div>${qs.map(q=>qHtml(q,'b')).join('')}`+(mode==='B'?`<h2>투자 경험</h2>${C.B.background.map(q=>qHtml(q,'bbg')).join('')}`:'')
- +sticky(mode==='BA'?'도입 검토로 이동':'마치기','next',!(allDone(qs,'b')&&(mode!=='B'||allDone(C.B.background,'bbg'))),mode==='B'?'<button class="relink" data-act="revisit" data-b="0">브리핑 다시 보기</button>':''); },
+ +sticky(mode==='BA'?'도입 검토로 이동':'제출하기','next',!(allDone(qs,'b')&&(mode!=='B'||allDone(C.B.background,'bbg'))),'<button class="relink" data-act="revisit" data-b="0">브리핑 다시 보기</button>'); },
 /* 판 -11 도입 검토 ① 검토 자료 — 확인 네 가지(이번 사례 한 줄씩), 믿을 수 있게 한 점검, 이 사례의 정리. 수치는 '비교 결과 자세히 보기' 안 */
 rmat:()=>{ const A=C.A,M=A.material;
  return note()+back('뒤로','')+topbar('도입 검토')+`<div class="card"><div class="k">${esc(M.label)}</div><div class="big" style="font-size:24px">${esc(M.title)}</div><div class="s">${esc(M.sub)}</div></div>
@@ -217,13 +219,14 @@ rmat:()=>{ const A=C.A,M=A.material;
 review:()=>{ const qs=C.A.rQuestions;
  return note()+`<div class="back"><button data-act="back">‹ 검토 자료 다시 보기</button><span></span></div><div class="h1">귀 조직이라면 어떻게 하시겠어요?</div>${qs.map(q=>qHtml(q,'a')).join('')}`
  +sticky('다음으로','next',!allDone(qs,'a')); },
-aq:()=>{ const A=C.A; return note()+back('뒤로','')+`<div class="h1">하시는 일</div>${A.background.map(q=>qHtml(Object.assign({},q,{grid:true}),'bg')).join('')}`+sticky('마치기','next',!allDone(A.background,'bg')); },
-end:()=>{ const lead=!SUBMIT?'결과 파일을 공유하거나 복사한 글을 붙여 넣어, 링크를 보내 준 연구 담당자에게 카카오톡 1:1로 보내 주세요.'
-  :st.sentRemote?(LOCAL?'시험 제출을 확인했어요. 수집용 시트에는 저장되지 않아요.':'제출됐어요. 이제 창을 닫아도 돼요. 고맙습니다.'):st.sendFail?'제출이 되지 않았어요. 다시 눌러 보고, 그래도 안 되면 아래 ‘결과 텍스트 복사하기’로 복사해 연구 담당자에게 1:1로 보내 주세요.':'아래 버튼을 누르면 결과가 연구 담당자에게 제출돼요.';
- return note()+(st.sentRemote?'':`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`)+`<div class="center"><div class="done" style="margin-top:${st.sentRemote?72:24}px">${ic('check')}</div><div class="h1">${SUBMIT&&st.sentRemote?'제출을 마쳤어요':'모두 마쳤어요'}</div><div class="lead">${lead}</div></div>
+aq:()=>{ const A=C.A; return note()+back('뒤로','')+`<div class="h1">하시는 일</div>${A.background.map(q=>qHtml(Object.assign({},q,{grid:true}),'bg')).join('')}`+sticky('제출하기','next',!allDone(A.background,'bg')); },
+end:()=>{ const waiting=SUBMIT&&!st.sentRemote&&!st.sendFail;
+ const lead=!SUBMIT?'결과 파일을 공유하거나 복사한 글을 붙여 넣어, 링크를 보내 준 연구 담당자에게 카카오톡 1:1로 보내 주세요.'
+  :st.sentRemote?(LOCAL?'시험 제출을 확인했어요. 수집용 시트에는 저장되지 않아요.':'이제 창을 닫아도 돼요. 고맙습니다.'):st.sendFail?'아래 ‘다시 제출하기’를 눌러 주세요. 그래도 안 되면 ‘결과 텍스트 복사하기’로 복사해 연구 담당자에게 1:1로 보내 주세요.':'잠시만 기다려 주세요. 창을 닫지 말아 주세요.';
+ const title=!SUBMIT?'모두 마쳤어요':st.sentRemote?'제출을 마쳤어요':st.sendFail?'제출이 되지 않았어요':'제출하는 중이에요';
+ return note()+(st.sentRemote||waiting?'':`<div class="back"><button data-act="back">‹ 뒤로</button><span></span></div>`)+`<div class="center"><div class="done" style="margin-top:${st.sentRemote?72:24}px${st.sendFail||waiting?';opacity:.25':''}">${ic('check')}</div><div class="h1">${title}</div><div class="lead">${lead}</div></div>
  <div class="panel" style="margin-top:8px"><div class="kv"><span>참여한 것</span><span>${mode==='BA'?'브리핑 · 도입 검토':mode==='A'?'도입 검토':'브리핑'}</span></div><div class="kv"><span>참가 번호</span><span>${esc(code)}</span></div></div>
- ${mode.includes('A')&&st.sentRemote?`<div class="panel" style="margin-top:12px"><button class="fold2" data-act="team"><span>연구진의 검토안 보기</span><span class="chev">${st.teamOpen?'⌃':'⌄'}</span></button>${st.teamOpen?`<div class="sm2" style="padding-bottom:16px;white-space:pre-line">${esc(C.A.team)}</div>`:''}</div>`:''}
- <button class="link" data-act="copy"><span>결과 텍스트 복사하기</span><span class="chev">›</span></button>`+(SUBMIT?sticky(st.sentRemote?'제출 완료':(sending?'제출하는 중…':'결과 제출하기'),'submitRemote',st.sentRemote||sending):sticky('결과 파일 공유하기','send')); }
+ ${st.sentRemote||waiting?'':'<button class="link" data-act="copy"><span>결과 텍스트 복사하기</span><span class="chev">›</span></button>'}`+(SUBMIT?sticky(st.sentRemote?'제출 완료':(sending||waiting?'제출하는 중…':'다시 제출하기'),'submitRemote',st.sentRemote||sending||waiting):sticky('결과 파일 공유하기','send')); }
 };
 function render(){ const s=step(); $.innerHTML=V[s.t](s); window.scrollTo(0,0); }
 const keep=()=>{ const y=window.scrollY; render(); window.scrollTo(0,y); };
@@ -254,7 +257,6 @@ $.addEventListener('click',e=>{ const dead=e.target.closest('[data-dead]'); if(d
   log('pick',{q:b.dataset.q,v:b.dataset.v}); return keep(); }
  if(act==='expand'){ const c=CASE(s),k=b.dataset.k; c.expand=c.expand.includes(k)?c.expand.filter(x=>x!==k):[...c.expand,k]; if(c.expand.includes(k)){ c.expandEver=c.expandEver||[]; if(!c.expandEver.includes(k)) c.expandEver.push(k); } log('expand',{day:s.day,k,open:c.expand.includes(k)}); return keep(); }
  if(act==='amore'){ st.A.more=!st.A.more; if(st.A.more) st.A.moreSeen=true; log('amore',{open:st.A.more}); return keep(); }
- if(act==='team'){ st.teamOpen=!st.teamOpen; log('team',{open:st.teamOpen}); return keep(); }
  if(act==='ev'){ const x=evOf(S.days[s.day])[+b.dataset.ev]; CASE(s).evOpened.push(`${x.kind}:${x.i}`); log('open_ev',{day:s.day,k:`${x.kind}:${x.i}`}); return openSub({v:'ev',ev:+b.dataset.ev}); }
  if(act==='sources'){ log('open_list',{day:s.day}); return openSub({v:'sources'}); }
  if(act==='source'){ CASE(s).opened.push(b.dataset.sid); log('open_source',{day:s.day,sid:b.dataset.sid,from:b.dataset.from}); return openSub({v:'source',sid:b.dataset.sid,from:b.dataset.from}); }
@@ -268,7 +270,7 @@ $.addEventListener('click',e=>{ const dead=e.target.closest('[data-dead]'); if(d
 function result(full){ const dev={w:innerWidth,h:innerHeight,touch:navigator.maxTouchPoints>0,mobile:/Mobi|Android/i.test(navigator.userAgent)};
  const r={v:2,study:st.study||'2026-11-24',code,order,mode,sample:!!S.meta.sample,built:S.meta.built,started:st.t0,finished:st.fin||Date.now(),dev,profile:st.profile,dead:st.dead};
  if(mode.includes('B')) r.B={cases:Object.values(st.B.cases).sort((a,b)=>a.b-b.b).map(c=>({id:c.id,cond:c.cond,b:c.b,ms:Math.round(c.ms),hid:Math.round(c.hid),opened:c.opened,evOpened:c.evOpened,expand:c.expand,expandEver:c.expandEver||[],revisits:c.revisits||0})),answers:st.B.answers,bg:st.B.bg||{}};
- if(mode.includes('A')) r.A={answers:st.A.answers,bg:st.A.bg,more:!!(st.A.moreSeen||st.A.more),team:!!st.teamOpen};
+ if(mode.includes('A')) r.A={answers:st.A.answers,bg:st.A.bg,more:!!(st.A.moreSeen||st.A.more)};   /* 판 -12: 제출 뒤 '연구진의 검토안 보기'는 뺐다 — 검토 자료의 '이 사례의 정리'와 같은 내용 */
  if(TEST) r.test=true;
  if(full) r.events=st.events; return r; }
 const b64=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -288,4 +290,4 @@ async function copyText(){ finish(); const t=compact();
 
 /* ── 시작 ── */
 if(!valid){ $.innerHTML=`<div class="center"><div class="h1" style="margin-top:96px">링크를 다시 확인해 주세요</div><div class="lead">받은 링크 그대로 열어야 해요.</div></div>`; }
-else{ if(st.events.length===0) log('open',{order,mode}); else log('resume'); render(); startClock(); }
+else{ if(st.events.length===0) log('open',{order,mode}); else log('resume'); render(); startClock(); autoSubmit(); }
